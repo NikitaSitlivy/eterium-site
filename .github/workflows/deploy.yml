@@ -2,7 +2,7 @@ name: Deploy Frontend
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,41 +12,34 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
 
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        run: pnpm build
-
-      # Кладём корневой CNAME в dist, чтобы он точно оказался на Pages
-      - name: Include CNAME in artifact
+      # Перекладываем CNAME из корня репо в dist, чтобы Pages знал кастомный домен
+      - name: Copy CNAME to dist
         run: |
           if [ -f CNAME ]; then
             cp CNAME dist/CNAME
           fi
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
