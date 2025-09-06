@@ -1,15 +1,92 @@
 <!doctype html>
 <html lang="ru">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark" />
-    <title>Eterium / FingerCloak Lab</title>
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0b1020" />
+
+    <!-- === PRIMARY SEO === -->
+    <title>FingerCloak — Anti-Fingerprint Lab</title>
+    <meta name="description" content="FingerCloak — инструменты против браузерного фингерпринта: Canvas/WebGL защита, отсутствие утечки WebRTC-IP, стабильные профили, SDK для Playwright/Puppeteer и расширение." />
+    <link rel="canonical" href="https://fingercloak.com/" />
+    <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" />
+    <meta name="keywords" content="browser fingerprinting, анти фингерпринт, anti fingerprint, anti-bot, WebRTC IP leak, Canvas WebGL, Playwright, Puppeteer, fingerprint test" />
+
+    <!-- === SOCIAL / OPEN GRAPH === -->
+    <meta property="og:title" content="FingerCloak — Anti-Fingerprint Lab" />
+    <meta property="og:description" content="Инструменты анти-фингерпринта для разработчиков, компаний и пользователей. SDK + расширение + тест-лаборатория." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fingercloak.com/" />
+    <meta property="og:image" content="https://fingercloak.com/og.png" />
+    <meta property="og:site_name" content="FingerCloak" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="FingerCloak — Anti-Fingerprint Lab" />
+    <meta name="twitter:description" content="Защита fingerprint, анти-бот и приватность. SDK + расширение." />
+    <meta name="twitter:image" content="https://fingercloak.com/og.png" />
+
+    <!-- === DISCOVERY HINTS === -->
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    <link rel="alternate" href="https://fingercloak.com/" hreflang="ru" />
+    <link rel="alternate" href="https://fingercloak.com/en/" hreflang="en" />
+
+    <!-- === ICONS === -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/svg+xml" sizes="16x16" href="/favicon-16.svg" />
+    <!-- <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" /> -->
+
+    <!-- === STRUCTURED DATA (JSON-LD) === -->
+    <!-- Organization -->
+    <script type="application/ld+json">
+    {
+      "@context":"https://schema.org",
+      "@type":"Organization",
+      "name":"FingerCloak",
+      "url":"https://fingercloak.com/",
+      "logo":"https://fingercloak.com/og.png",
+      "sameAs":[
+        "https://github.com/fingercloak",
+        "https://npmjs.com/org/fingercloak"
+      ]
+    }
+    </script>
+    <!-- WebSite (SiteLinks Search Box готов под /search) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "url": "https://fingercloak.com/",
+      "name": "FingerCloak",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://fingercloak.com/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    <!-- SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "FingerCloak",
+      "applicationCategory": "SecurityApplication",
+      "operatingSystem": "Web",
+      "url": "https://fingercloak.com/",
+      "description": "Набор инструментов против браузерного фингерпринта: SDK для Playwright/Puppeteer, профили, расширение и тест-лаборатория.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "publisher": { "@type": "Organization", "name": "FingerCloak" }
+    }
+    </script>
+
+    <!-- === BASE STYLES === -->
     <style>
       :root{
         --bg:#07090f; --panel:#0c1322; --panel-2:#0e1628; --text:#dff2ff; --muted:#8fa7b7;
         --accent:#38e8ff; --accent-2:#c43cff; --good:#0bd27a; --bad:#ff4769; --warn:#ffc14d;
-        --radius:16px; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --radius:16px; --mono: ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
         --sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", sans-serif;
       }
       *{box-sizing:border-box}
@@ -21,11 +98,46 @@
           linear-gradient(180deg, #05070c, #07090f 30%, #060a13);
         background-attachment: fixed;
       }
+      header{max-width:1100px;margin:32px auto 0;padding:0 16px;display:flex;gap:12px;align-items:center}
+      header .logo{width:28px;height:28px;display:inline-block;background:url('/favicon.svg') no-repeat center/contain}
+      header h1{font-size:20px;margin:0}
+      main{max-width:1100px;margin:24px auto;padding:0 16px}
+      .hero{background:rgba(12,19,34,.6); border:1px solid #1a2743; border-radius:20px; padding:24px}
+      .hero h2{margin:0 0 8px;font-size:28px}
+      .hero p{margin:0;color:var(--muted)}
+      .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:20px}
+      .card{background:rgba(14,22,40,.6);border:1px solid #1b2c50;border-radius:16px;padding:16px}
+      a.cta{display:inline-block;margin-top:14px;padding:10px 14px;border-radius:12px;background:var(--accent);color:#001014;text-decoration:none;font-weight:600}
+      footer{max-width:1100px;margin:32px auto;padding:0 16px;color:var(--muted);font-size:13px}
     </style>
-    <script type="module" crossorigin src="/assets/index-B5cBL1lX.js"></script>
+    <script type="module" crossorigin src="/assets/index-WNWiBgLX.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-k6wwqZHf.css">
   </head>
   <body>
-    <div id="root"></div>
+    <header>
+      <span class="logo" aria-hidden="true"></span>
+      <h1>FingerCloak — Anti-Fingerprint Lab</h1>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h2>Анти-фингерпринт платформа</h2>
+        <p>Защита Canvas/WebGL, отсутствие утечки WebRTC-IP, стабильные профили. SDK для Playwright/Puppeteer, расширение и тест-лаборатория.</p>
+        <a class="cta" href="/lab/">Открыть лабораторию</a>
+      </section>
+
+      <section class="grid" aria-label="Ключевые возможности">
+        <div class="card"><strong>SDK</strong><br/>Импорт для Playwright/Puppeteer. Инжекция до скриптов страницы.</div>
+        <div class="card"><strong>Расширение</strong><br/>Для пользователей и компаний — защита без кода.</div>
+        <div class="card"><strong>Профили</strong><br/>Генерация и пресеты для консистентных отпечатков.</div>
+        <div class="card"><strong>Тесты</strong><br/>Canvas, WebRTC, сенсоры — лаборатория в один клик.</div>
+      </section>
+    </main>
+
+    <footer>
+      © <span id="y"></span> FingerCloak. Безопасность и приватность в вебе.
+    </footer>
+
+    <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
   </body>
 </html>

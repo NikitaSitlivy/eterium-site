@@ -42,7 +42,7 @@ const HeroViz: React.FC<{ env?: any; screen?: any }> = ({ env, screen }) => {
   const device = env?.uaData?.mobile || /iPhone|iPad|Android/i.test(env?.ua || "") ? "Mobile" : "Desktop";
 
   return (
-    <div className="hero-viz" aria-label="Ваше окружение">
+    <div className="hero-viz" aria-label="Your environment">
       <div className="hero-scan" />
       <div className="hero-header">
         <div className="hero-icon">
@@ -52,14 +52,14 @@ const HeroViz: React.FC<{ env?: any; screen?: any }> = ({ env, screen }) => {
             <circle cx="12" cy="19" r="1" fill="#25e089"/>
           </svg>
         </div>
-        <div>Ваше окружение</div>
+        <div>Your environment</div>
       </div>
       <div className="hero-grid">
-        <div className="dim">Устройство</div><div style={{fontWeight:700}}>{device}</div>
-        <div className="dim">Браузер</div><div>{browser}</div>
+        <div className="dim">Device</div><div style={{fontWeight:700}}>{device}</div>
+        <div className="dim">Browser</div><div>{browser}</div>
 
         <div className="dim">OS</div><div style={{fontWeight:700}}>{os}</div>
-        <div className="dim">Языки</div><div>{env?.languages?.join(", ") || "—"}</div>
+        <div className="dim">Languages</div><div>{env?.languages?.join(", ") || "—"}</div>
 
         <div className="dim">Timezone</div><div style={{fontWeight:700}}>{env?.timezone || "—"}</div>
         <div className="dim">DPR</div><div>{screen?.dpr ?? "—"}</div>
@@ -71,9 +71,46 @@ const HeroViz: React.FC<{ env?: any; screen?: any }> = ({ env, screen }) => {
   );
 };
 
+/* ---------- Quick Links (magnet pages) ---------- */
+
+const LinkPill: React.FC<{ href: string; label: string; title?: string; icon?: React.ReactNode }> = ({ href, label, title, icon }) => (
+  <a
+    href={href}
+    title={title || label}
+    style={{
+      display: "inline-flex", alignItems: "center", gap: 8,
+      background: "linear-gradient(180deg,#0f1a2b,#0c1322)",
+      border: "1px solid #1b2c50",
+      padding: "8px 12px", borderRadius: 12, textDecoration: "none",
+      color: "var(--text)", fontWeight: 600, boxShadow: "0 6px 18px #0006"
+    }}
+  >
+    <span aria-hidden="true">{icon}</span>
+    <span>{label}</span>
+  </a>
+);
+
+const QuickLinks: React.FC = () => (
+  <nav aria-label="Quick tools"
+       style={{maxWidth:1100, margin:"18px auto 6px", padding:"0 16px"}}>
+    <div style={{display:"flex", flexWrap:"wrap", gap: 10}}>
+      <LinkPill href="/check/webrtc-ip-leak" label="WebRTC IP check"
+        icon={<svg width="16" height="16" viewBox="0 0 24 24"><path d="M3 12h18M12 3v18" stroke="#38e8ff" strokeWidth="2" /></svg>} />
+      <LinkPill href="/check/canvas-fingerprint" label="Canvas/WebGL hash"
+        icon={<svg width="16" height="16" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="12" rx="2" stroke="#38e8ff" strokeWidth="2"/></svg>} />
+      <LinkPill href="/docs/playwright-adapter" label="Playwright adapter"
+        icon={<svg width="16" height="16" viewBox="0 0 24 24"><path d="M5 19l14-14" stroke="#38e8ff" strokeWidth="2"/></svg>} />
+      <LinkPill href="/docs/puppeteer-adapter" label="Puppeteer adapter"
+        icon={<svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" stroke="#38e8ff" strokeWidth="2"/></svg>} />
+      <LinkPill href="/faq" label="FAQ"
+        icon={<svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 9a3 3 0 016 0c0 3-3 2-3 5M12 17h.01" stroke="#38e8ff" strokeWidth="2" strokeLinecap="round"/></svg>} />
+    </div>
+  </nav>
+);
+
 /* ---------- App ---------- */
 
-// Унифицированный конструктор отчёта: включает ВСЁ, даже если не собирали
+// Build a full report object even for not-yet-collected sections
 function buildFullReport(state: any) {
   const notCollected = (extra: Record<string, any> = {}) => ({ status: "not_collected", ...extra });
 
@@ -84,7 +121,7 @@ function buildFullReport(state: any) {
       app: "FingerCloak Lab"
     },
 
-    // Базовые (собираются при загрузке)
+    // Collected on load
     env: state.env ?? notCollected(),
     screen: state.screen ?? notCollected(),
     storage: state.storage ?? notCollected(),
@@ -93,7 +130,7 @@ function buildFullReport(state: any) {
     network: state.network ?? notCollected({ supported: "unknown" }),
     csscap: state.csscap ?? notCollected(),
 
-    // По кнопке (могут быть не собраны)
+    // On-demand sections
     webgpu: state.webgpu ?? notCollected({ supported: "unknown" }),
     mediacap: state.mediacap ?? notCollected({ supported: "unknown" }),
     webauthn: state.webauthn ?? notCollected({ supported: "unknown" }),
@@ -129,23 +166,21 @@ export default function App() {
     })();
   }, []);
 
-const copyReport = async () => {
-  const report = buildFullReport(state);
-  const text = JSON.stringify(report, null, 2);
-  await navigator.clipboard.writeText(text);
-
-  // мини-тост
-  const t = document.createElement("div");
-  t.textContent = "Отчёт скопирован — все секции включены";
-  Object.assign(t.style, {
-    position: "fixed", bottom: "22px", left: "50%", transform: "translateX(-50%)",
-    background: "#0b1c1a", border: "1px solid #14453b", color: "var(--text)",
-    padding: "10px 14px", borderRadius: "12px", boxShadow: "0 12px 40px #000a", zIndex: "9999"
-  });
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 1600);
-};
-
+  const copyReport = async () => {
+    const report = buildFullReport(state);
+    const text = JSON.stringify(report, null, 2);
+    await navigator.clipboard.writeText(text);
+    // toast
+    const t = document.createElement("div");
+    t.textContent = "Report copied — all sections included";
+    Object.assign(t.style, {
+      position: "fixed", bottom: "22px", left: "50%", transform: "translateX(-50%)",
+      background: "#0b1c1a", border: "1px solid #14453b", color: "var(--text)",
+      padding: "10px 14px", borderRadius: "12px", boxShadow: "0 12px 40px #000a", zIndex: "9999"
+    });
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 1600);
+  };
 
   return (
     <div className="wrap">
@@ -157,32 +192,35 @@ const copyReport = async () => {
             <h1 className="title"><span className="brand">FingerCloak</span> <span className="accent">Lab</span></h1>
             <div className="title-underline" />
           </div>
-          <div className="sub">Показываем, что сайт может узнать о вас прямо сейчас — локально, без установки.</div>
+          <div className="sub">We show what a site can learn about you right now — locally, with no installs.</div>
           <HeroViz env={state.env} screen={state.screen} />
         </div>
       </header>
 
+      {/* Quick links to tools/docs */}
+      <QuickLinks />
+
       <div className="grid">
-        {/* Статус */}
-        <Card title="Статус">
+        {/* Status */}
+        <Card title="Status">
           <div className="inner">
             <div className="pills">
-              <span className="pill"><span className="dot" /> WebRTC не запускался</span>
-              <span className="pill"><span className="dot" /> Canvas не запускался</span>
+              <span className="pill"><span className="dot" /> WebRTC not started</span>
+              <span className="pill"><span className="dot" /> Canvas not started</span>
             </div>
             <div className="kv">
-              <div className="dim">Страница</div><div>{location.href}</div>
-              <div className="dim">Время</div><div>{now.toISOString().replace("T"," ").replace("Z"," UTC")}</div>
+              <div className="dim">Page</div><div>{location.href}</div>
+              <div className="dim">Time</div><div>{now.toISOString().replace("T"," ").replace("Z"," UTC")}</div>
             </div>
             <div className="hr"></div>
             <div className="pills" style={{ margin: 0 }}>
-              <button className="btn" onClick={copyReport}>Скопировать полный отчёт</button>
+              <button className="btn" onClick={copyReport}>Copy full report</button>
             </div>
           </div>
         </Card>
 
-        {/* Окружение */}
-        <Card title="Окружение браузера">
+        {/* Environment */}
+        <Card title="Browser environment">
           <div className="inner">
             <div className="kv">
               <div className="dim">UA</div>
@@ -203,8 +241,8 @@ const copyReport = async () => {
           </div>
         </Card>
 
-        {/* Экран и хранилища */}
-        <Card title="Экран и хранилища">
+        {/* Screen & Storage */}
+        <Card title="Screen & storage">
           <div className="inner">
             <div className="kv">
               {Object.entries(state.screen || {}).map(([k,v])=>(
@@ -221,7 +259,7 @@ const copyReport = async () => {
         </Card>
 
         {/* Network */}
-        <Card title="Сеть (Network Information)">
+        <Card title="Network (Network Information)">
           <div className="inner">
             <pre className="pre">{JSON.stringify(state.network ?? {supported:false}, null, 2)}</pre>
           </div>
@@ -252,7 +290,7 @@ const copyReport = async () => {
                 const webgpu = await collectWebGPU();
                 setState(s => ({ ...s, webgpu }));
               }}>
-                Собрать WebGPU
+                Collect WebGPU
               </button>
             </div>
             <pre className="pre">{JSON.stringify(state.webgpu ?? { supported:false }, null, 2)}</pre>
@@ -267,7 +305,7 @@ const copyReport = async () => {
                 const mediacap = await collectMediaCapabilities();
                 setState(s => ({ ...s, mediacap }));
               }}>
-                Проверить кодеки
+                Check codecs
               </button>
             </div>
             <pre className="pre">{JSON.stringify(state.mediacap ?? { supported:false }, null, 2)}</pre>
@@ -282,14 +320,14 @@ const copyReport = async () => {
         </Card>
 
         {/* WebAuthn */}
-        <Card title="WebAuthn (платформенный аутентификатор)">
+        <Card title="WebAuthn (platform authenticator)">
           <div className="inner">
             <div className="pills" style={{ marginBottom: 10 }}>
               <button className="btn" onClick={async ()=>{
                 const webauthn = await collectWebAuthn();
                 setState(s => ({ ...s, webauthn }));
               }}>
-                Проверить WebAuthn
+                Check WebAuthn
               </button>
             </div>
             <pre className="pre">{JSON.stringify(state.webauthn ?? { supported:false }, null, 2)}</pre>
@@ -297,14 +335,14 @@ const copyReport = async () => {
         </Card>
 
         {/* Battery */}
-        <Card title="Батарея (где поддерживается)">
+        <Card title="Battery (where supported)">
           <div className="inner">
             <div className="pills" style={{ marginBottom: 10 }}>
               <button className="btn" onClick={async ()=>{
                 const battery = await collectBattery();
                 setState(s => ({ ...s, battery }));
               }}>
-                Считать Battery API
+                Read Battery API
               </button>
             </div>
             <pre className="pre">{JSON.stringify(state.battery ?? { supported:false }, null, 2)}</pre>
@@ -312,14 +350,14 @@ const copyReport = async () => {
         </Card>
 
         {/* Sensors */}
-        <Card title="Сенсоры и разрешения">
+        <Card title="Sensors & permissions">
           <div className="inner">
             <div className="pills" style={{ marginBottom: 10 }}>
               <button className="btn" onClick={async ()=>{
                 const sensors = await collectSensors();
                 setState(s => ({ ...s, sensors }));
               }}>
-                Проверить сенсоры
+                Check sensors
               </button>
             </div>
             <pre className="pre">{JSON.stringify(state.sensors ?? {}, null, 2)}</pre>
@@ -334,12 +372,12 @@ const copyReport = async () => {
                 const res = await runCanvas();
                 setState(s => ({ ...s, canvas: res }));
               }}>
-                Запустить Canvas-хэш
+                Run Canvas hash
               </button>
             </div>
             <div className="kv">
-              <div className="dim">Хэш</div><div>{state.canvas?.hash ?? "—"}</div>
-              <div className="dim">Размер</div><div>{state.canvas ? `${state.canvas.w}×${state.canvas.h}` : "—"}</div>
+              <div className="dim">Hash</div><div>{state.canvas?.hash ?? "—"}</div>
+              <div className="dim">Size</div><div>{state.canvas ? `${state.canvas.w}×${state.canvas.h}` : "—"}</div>
             </div>
           </div>
         </Card>
@@ -352,14 +390,14 @@ const copyReport = async () => {
                 const res = await runRTC();
                 setState(s => ({ ...s, rtc: res }));
               }}>
-                Проверить ICE-кандидаты (IP-утечки)
+                Check ICE candidates (IP leaks)
               </button>
             </div>
             <div className="kv">
-              <div className="dim">Найдено кандидатов</div><div>{state.rtc?.candidates?.length ?? 0}</div>
-              <div className="dim">Приватные адреса</div><div>{state.rtc?.privateIPs?.length ? state.rtc.privateIPs.join(", ") : "—"}</div>
-              <div className="dim">Публичные адреса</div><div>{state.rtc?.publicIPs?.length ? state.rtc.publicIPs.join(", ") : "—"}</div>
-              <div className="dim">Типы</div><div>{state.rtc?.types?.length ? state.rtc.types.join(", ") : "—"}</div>
+              <div className="dim">Candidates found</div><div>{state.rtc?.candidates?.length ?? 0}</div>
+              <div className="dim">Private addresses</div><div>{state.rtc?.privateIPs?.length ? state.rtc.privateIPs.join(", ") : "—"}</div>
+              <div className="dim">Public addresses</div><div>{state.rtc?.publicIPs?.length ? state.rtc.publicIPs.join(", ") : "—"}</div>
+              <div className="dim">Types</div><div>{state.rtc?.types?.length ? state.rtc.types.join(", ") : "—"}</div>
             </div>
             <div className="hr"></div>
             <pre className="pre">{(state.rtc?.candidates || []).join("\n") || "—"}</pre>
@@ -374,7 +412,7 @@ const copyReport = async () => {
                 const fpjs = await runFPJS();
                 setState(s => ({ ...s, fpjs }));
               }}>
-                Собрать FingerprintJS
+                Collect FingerprintJS
               </button>
             </div>
             <div className="kv">
@@ -389,7 +427,7 @@ const copyReport = async () => {
       </div>
 
       <div className="footer">
-        © {new Date().getFullYear()} FingerCloak Lab. Данные показываются локально в вашем браузере; мы их никуда не отправляем.
+        © {new Date().getFullYear()} FingerCloak Lab. Data is shown locally in your browser; we do not send it anywhere.
       </div>
     </div>
   );
