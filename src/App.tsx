@@ -15,7 +15,7 @@ import { collectBattery } from "./collect/battery";
 import { collectSensors } from "./collect/sensors";
 import { collectNetwork } from "./collect/network";
 import { runFPJS } from "./integrations/fpjs";
-import { health as apiHealth, version as apiVersion } from "./lib/api";
+import { health as apiHealth, version as apiVersion, fpCollect, fpCompare, fpGet } from "./lib/api";
 import "./styles.css";
 
 /* ---------- Header bits ---------- */
@@ -69,7 +69,7 @@ const HeroViz: React.FC<{ env?: any; screen?: any }> = ({ env, screen }) => {
   );
 };
 
-/* ---------- Quick Links (magnet pages) ---------- */
+/* ---------- Quick Links ---------- */
 
 const LinkPill: React.FC<{ href: string; label: string; title?: string; icon?: React.ReactNode }> = ({ href, label, title, icon }) => (
   <a
@@ -105,7 +105,7 @@ const QuickLinks: React.FC = () => (
   </nav>
 );
 
-/* ---------- App ---------- */
+/* ---------- Report builder ---------- */
 
 function buildFullReport(state: any) {
   const notCollected = (extra: Record<string, any> = {}) => ({ status: "not_collected", ...extra });
@@ -145,6 +145,14 @@ export default function App() {
   const [state, setState] = useState<State>({});
   const now = useMemo(() => new Date(), []);
 
+  // NEW: snapshot state
+  const [fpId, setFpId] = useState<string | null>(null);
+  const [lastFpId, setLastFpId] = useState<string | null>(null);
+  const [fpHash, setFpHash] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [compare, setCompare] = useState<{ sameHash?: boolean; similarity?: number; aId?: string; bId?: string } | null>(null);
+
+  // Load basic sections
   useEffect(() => {
     (async () => {
       const env = await collectEnv();
@@ -155,7 +163,7 @@ export default function App() {
       const network = collectNetwork();
       const csscap = collectCSSCapabilities();
 
-      // ✅ Проверка API (health + version)
+      // API status
       let api: State["api"] = { ok: false };
       try {
         const h = await apiHealth();
@@ -170,12 +178,73 @@ export default function App() {
     })();
   }, []);
 
+  // NEW: read ?fp=<id> → fetch snapshot to show/share
+  useEffect(() => {
+    const url = new URL(location.href);
+    const fromUrl = url.searchParams.get('fp');
+    if (fromUrl) {
+      fpGet(fromUrl).then(r => {
+        if (r?.ok) {
+          setFpId(fromUrl);
+          setFpHash(r.hash ?? null);
+        }
+      }).catch(() => {});
+    }
+  }, []);
+
+  // NEW: actions
+  const saveSnapshot = async () => {
+    setSaving(true);
+    try {
+      const report = buildFullReport(state);
+      const res = await fpCollect(report);
+      if (res?.ok && res.id) {
+        setLastFpId(fpId);           // запомним предыдущий id (для сравнения)
+        setFpId(res.id);
+        setFpHash(res.hash ?? null);
+        // добавим в адресную строку ?fp=
+        const url = new URL(location.href);
+        url.searchParams.set('fp', res.id);
+        history.replaceState(null, '', url.toString());
+        toast("Snapshot saved");
+      } else {
+        toast(res?.error || "Save failed");
+      }
+    } catch (e:any) {
+      toast("Save failed: " + String(e?.message || e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const copyPermalink = async () => {
+    if (!fpId) return toast("Nothing to copy — save a snapshot first");
+    const url = new URL(location.href);
+    url.searchParams.set('fp', fpId);
+    await navigator.clipboard.writeText(url.toString());
+    toast("Permalink copied");
+  };
+
+  const compareWithPrevious = async () => {
+    if (!lastFpId || !fpId) return toast("Need two snapshots: save again to compare");
+    const r = await fpCompare(lastFpId, fpId);
+    if (r?.ok) {
+      setCompare({ sameHash: r.sameHash, similarity: r.similarity, aId: r.aId, bId: r.bId });
+    } else {
+      toast(r?.error || "Compare failed");
+    }
+  };
+
   const copyReport = async () => {
     const report = buildFullReport(state);
     const text = JSON.stringify(report, null, 2);
     await navigator.clipboard.writeText(text);
+    toast("Report copied — all sections included");
+  };
+
+  function toast(msg: string) {
     const t = document.createElement("div");
-    t.textContent = "Report copied — all sections included";
+    t.textContent = msg;
     Object.assign(t.style, {
       position: "fixed", bottom: "22px", left: "50%", transform: "translateX(-50%)",
       background: "#0b1c1a", border: "1px solid #14453b", color: "var(--text)",
@@ -183,7 +252,7 @@ export default function App() {
     });
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 1600);
-  };
+  }
 
   return (
     <div className="wrap">
@@ -195,7 +264,7 @@ export default function App() {
             <h1 className="title"><span className="brand">FingerCloak</span> <span className="accent">Lab</span></h1>
             <div className="title-underline" />
           </div>
-          <div className="sub">We show what a site can learn about you right now — locally, with no installs.</div>
+          <div className="sub">We show what a site can learn about you right now. Save a snapshot to get a shareable link or compare changes.</div>
           <HeroViz env={state.env} screen={state.screen} />
         </div>
       </header>
@@ -217,9 +286,29 @@ export default function App() {
               <div className="dim">API version</div><div>{state.api?.version ?? "—"}</div>
             </div>
             <div className="hr"></div>
-            <div className="pills" style={{ margin: 0 }}>
+            <div className="pills" style={{ margin: 0, gap: 8, flexWrap: "wrap" }}>
               <button className="btn" onClick={copyReport}>Copy full report</button>
+              <button className="btn" disabled={saving} onClick={saveSnapshot}>
+                {saving ? "Saving…" : "Save snapshot"}
+              </button>
+              <button className="btn" onClick={copyPermalink} disabled={!fpId}>Copy permalink</button>
+              <button className="btn" onClick={compareWithPrevious} disabled={!lastFpId || !fpId}>Compare with previous</button>
             </div>
+            <div className="hr"></div>
+            <div className="kv">
+              <div className="dim">Snapshot id</div><div style={{wordBreak:"break-all"}}>{fpId ?? "—"}</div>
+              <div className="dim">Hash</div><div style={{wordBreak:"break-all"}}>{fpHash ?? "—"}</div>
+              <div className="dim">Prev snapshot</div><div style={{wordBreak:"break-all"}}>{lastFpId ?? "—"}</div>
+            </div>
+            {compare && (
+              <>
+                <div className="hr"></div>
+                <div className="kv">
+                  <div className="dim">Same hash</div><div>{String(compare.sameHash)}</div>
+                  <div className="dim">Similarity</div><div>{compare.similarity?.toFixed(3)}</div>
+                </div>
+              </>
+            )}
           </div>
         </Card>
 
@@ -229,7 +318,6 @@ export default function App() {
             <div className="kv">
               <div className="dim">UA</div>
               <div>{(state.env?.ua || "").slice(0,140)}{(state.env?.ua?.length||0)>140 ? "…" : ""}</div>
-
               <div className="dim">UA platform</div><div>{state.env?.uaData?.platform ?? state.env?.platform ?? "—"}</div>
               <div className="dim">UA version</div><div>{state.env?.uaData?.uaFullVersion ?? "—"}</div>
               <div className="dim">Mobile</div><div>{String(state.env?.uaData?.mobile ?? false)}</div>
@@ -433,7 +521,7 @@ export default function App() {
       </div>
 
       <div className="footer">
-        © {new Date().getFullYear()} FingerCloak Lab. Data is shown locally in your browser; we do not send it anywhere.
+        © {new Date().getFullYear()} FingerCloak Lab. We only send data to our API when you press “Save snapshot”.
       </div>
     </div>
   );
