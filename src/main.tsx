@@ -16,15 +16,15 @@ import "./styles.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<div />} />
-        <Route path="/lab" element={<App />} />
-        <Route path="/check/webrtc-ip-leak" element={<WebRTCLeak />} />
-        <Route path="/check/canvas-fingerprint" element={<CanvasFingerprint />} />
-        <Route path="/docs/playwright-adapter" element={<PlaywrightAdapter />} />
-        <Route path="/docs/puppeteer-adapter" element={<PuppeteerAdapter />} />
-        <Route path="/faq" element={<Faq />} />
-      </Routes>
+<Routes>
+  <Route path="/" element={<div />} />
+  <Route path="/lab/*" element={<App />} />   {/* было /lab */}
+  <Route path="/check/webrtc-ip-leak" element={<WebRTCLeak />} />
+  <Route path="/check/canvas-fingerprint" element={<CanvasFingerprint />} />
+  <Route path="/docs/playwright-adapter" element={<PlaywrightAdapter />} />
+  <Route path="/docs/puppeteer-adapter" element={<PuppeteerAdapter />} />
+  <Route path="/faq" element={<Faq />} />
+</Routes>
     </BrowserRouter>
   </React.StrictMode>
 );

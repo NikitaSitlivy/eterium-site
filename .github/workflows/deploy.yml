@@ -18,30 +18,41 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
 
-      # Перекладываем CNAME из корня репо в dist, чтобы Pages знал кастомный домен
+      - name: Build
+        run: pnpm build
+
+      # SPA fallback — прямые переходы на /lab, /lab/, /check/... и т.д.
+      - name: Create 404.html fallback
+        run: cp dist/index.html dist/404.html
+
+      # Кастомный домен
       - name: Copy CNAME to dist
         run: |
           if [ -f CNAME ]; then
             cp CNAME dist/CNAME
           fi
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload artifact (dist)
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: dist
 
   deploy:
     needs: build

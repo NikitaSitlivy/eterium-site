@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,34 +8,31 @@
 
     <!-- === PRIMARY SEO === -->
     <title>FingerCloak — Anti-Fingerprint Lab</title>
-    <meta name="description" content="FingerCloak — инструменты против браузерного фингерпринта: Canvas/WebGL защита, отсутствие утечки WebRTC-IP, стабильные профили, SDK для Playwright/Puppeteer и расширение." />
+    <meta name="description" content="FingerCloak — tools against browser fingerprinting: Canvas/WebGL protection, no WebRTC-IP leaks, stable profiles, SDK for Playwright/Puppeteer, and a testing lab." />
     <link rel="canonical" href="https://fingercloak.com/" />
     <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" />
-    <meta name="keywords" content="browser fingerprinting, анти фингерпринт, anti fingerprint, anti-bot, WebRTC IP leak, Canvas WebGL, Playwright, Puppeteer, fingerprint test" />
+    <meta name="keywords" content="browser fingerprinting, anti fingerprint, anti-bot, privacy, WebRTC IP leak, Canvas WebGL, Playwright, Puppeteer, fingerprint test" />
 
     <!-- === SOCIAL / OPEN GRAPH === -->
     <meta property="og:title" content="FingerCloak — Anti-Fingerprint Lab" />
-    <meta property="og:description" content="Инструменты анти-фингерпринта для разработчиков, компаний и пользователей. SDK + расширение + тест-лаборатория." />
+    <meta property="og:description" content="Anti-fingerprint toolkit for developers, companies, and users. SDK + browser extension + testing lab." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://fingercloak.com/" />
     <meta property="og:image" content="https://fingercloak.com/og.png" />
     <meta property="og:site_name" content="FingerCloak" />
-    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="FingerCloak — Anti-Fingerprint Lab" />
-    <meta name="twitter:description" content="Защита fingerprint, анти-бот и приватность. SDK + расширение." />
+    <meta name="twitter:description" content="Browser fingerprint protection, anti-bot and privacy. SDK + extension + lab." />
     <meta name="twitter:image" content="https://fingercloak.com/og.png" />
 
     <!-- === DISCOVERY HINTS === -->
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
-    <link rel="alternate" href="https://fingercloak.com/" hreflang="ru" />
-    <link rel="alternate" href="https://fingercloak.com/en/" hreflang="en" />
+    <link rel="alternate" href="https://fingercloak.com/" hreflang="en" />
 
     <!-- === ICONS === -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" type="image/svg+xml" sizes="16x16" href="/favicon-16.svg" />
-    <!-- <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" /> -->
 
     <!-- === STRUCTURED DATA (JSON-LD) === -->
     <!-- Organization -->
@@ -52,7 +49,7 @@
       ]
     }
     </script>
-    <!-- WebSite (SiteLinks Search Box готов под /search) -->
+    <!-- WebSite (SiteLinks Search Box ready for /search) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -75,7 +72,7 @@
       "applicationCategory": "SecurityApplication",
       "operatingSystem": "Web",
       "url": "https://fingercloak.com/",
-      "description": "Набор инструментов против браузерного фингерпринта: SDK для Playwright/Puppeteer, профили, расширение и тест-лаборатория.",
+      "description": "Toolkit against browser fingerprinting: SDK for Playwright/Puppeteer, profiles, browser extension, and a testing lab.",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "publisher": { "@type": "Organization", "name": "FingerCloak" }
     }
@@ -109,35 +106,62 @@
       .card{background:rgba(14,22,40,.6);border:1px solid #1b2c50;border-radius:16px;padding:16px}
       a.cta{display:inline-block;margin-top:14px;padding:10px 14px;border-radius:12px;background:var(--accent);color:#001014;text-decoration:none;font-weight:600}
       footer{max-width:1100px;margin:32px auto;padding:0 16px;color:var(--muted);font-size:13px}
+      a{color:#9fe9ff}
     </style>
-    <script type="module" crossorigin src="/assets/index-WNWiBgLX.js"></script>
+    <script type="module" crossorigin src="/assets/index-BwDdPREd.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-k6wwqZHf.css">
   </head>
   <body>
-    <header>
-      <span class="logo" aria-hidden="true"></span>
-      <h1>FingerCloak — Anti-Fingerprint Lab</h1>
-    </header>
+    <!-- STATIC LANDING -->
+    <div id="landing">
+      <header>
+        <span class="logo" aria-hidden="true"></span>
+        <h1>FingerCloak — Anti-Fingerprint Lab</h1>
+      </header>
 
-    <main>
-      <section class="hero">
-        <h2>Анти-фингерпринт платформа</h2>
-        <p>Защита Canvas/WebGL, отсутствие утечки WebRTC-IP, стабильные профили. SDK для Playwright/Puppeteer, расширение и тест-лаборатория.</p>
-        <a class="cta" href="/lab/">Открыть лабораторию</a>
-      </section>
+      <main>
+        <section class="hero">
+          <h2>Anti-Fingerprint Platform</h2>
+          <p>
+            Protection against Canvas/WebGL fingerprinting, no WebRTC-IP leaks, and stable profiles.
+            SDK for Playwright/Puppeteer, a browser extension, and a testing lab.
+          </p>
+          <a class="cta" href="/lab/">Open Lab</a>
+        </section>
 
-      <section class="grid" aria-label="Ключевые возможности">
-        <div class="card"><strong>SDK</strong><br/>Импорт для Playwright/Puppeteer. Инжекция до скриптов страницы.</div>
-        <div class="card"><strong>Расширение</strong><br/>Для пользователей и компаний — защита без кода.</div>
-        <div class="card"><strong>Профили</strong><br/>Генерация и пресеты для консистентных отпечатков.</div>
-        <div class="card"><strong>Тесты</strong><br/>Canvas, WebRTC, сенсоры — лаборатория в один клик.</div>
-      </section>
-    </main>
+        <section class="grid" aria-label="Key features">
+          <div class="card"><strong>SDK</strong><br/>Import for Playwright/Puppeteer. Injects before page scripts.</div>
+          <div class="card"><strong>Extension</strong><br/>Protection without coding — for users and companies.</div>
+          <div class="card"><strong>Profiles</strong><br/>Consistent fingerprint presets and generation.</div>
+          <div class="card"><strong>Tests</strong><br/>Canvas, WebRTC, sensors — run lab checks in one click.</div>
+        </section>
+      </main>
 
-    <footer>
-      © <span id="y"></span> FingerCloak. Безопасность и приватность в вебе.
-    </footer>
+      <footer>
+        © <span id="y"></span> FingerCloak. Security and privacy on the web.
+      </footer>
+    </div>
 
-    <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+    <!-- REACT MOUNT POINT -->
+    <div id="root" style="display:none"></div>
+
+    <!-- small helper -->
+    <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+
+    <!-- Switch: show landing on "/" and React app on other routes -->
+    <script>
+      (function () {
+        var path = location.pathname;
+        var isHome = path === '/' || path === '/index.html';
+        var landing = document.getElementById('landing');
+        var root = document.getElementById('root');
+        if (landing && root) {
+          landing.style.display = isHome ? '' : 'none';
+          root.style.display = isHome ? 'none' : '';
+        }
+      })();
+    </script>
+
+    <!-- React bundle -->
   </body>
 </html>
