@@ -143,7 +143,20 @@ type State = {
 
 export default function App() {
   const [state, setState] = useState<State>({});
-  const now = useMemo(() => new Date(), []);
+const [now, setNow] = useState(new Date());
+useEffect(() => {
+  const id = setInterval(() => setNow(new Date()), 1000);
+  return () => clearInterval(id);
+}, []);
+
+// локальное и UTC время для вывода
+const localTime = new Intl.DateTimeFormat(undefined, {
+  hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit",
+}).format(now);
+
+const utcTime = new Intl.DateTimeFormat(undefined, {
+  timeZone: "UTC", hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit",
+}).format(now);
 
   // NEW: snapshot state
   const [fpId, setFpId] = useState<string | null>(null);
@@ -281,7 +294,9 @@ export default function App() {
             </div>
             <div className="kv">
               <div className="dim">Page</div><div>{location.href}</div>
-              <div className="dim">Time</div><div>{now.toISOString().replace("T"," ").replace("Z"," UTC")}</div>
+<div className="dim">Time (local)</div><div>{localTime} ({state.env?.timezone ?? "—"} {state.env?.utcOffset ?? ""})</div>
+<div className="dim">Time (UTC)</div><div>{utcTime} UTC</div>
+
               <div className="dim">API</div><div>{state.api?.ok ? "online" : "offline"}</div>
               <div className="dim">API version</div><div>{state.api?.version ?? "—"}</div>
             </div>
