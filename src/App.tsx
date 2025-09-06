@@ -14,7 +14,8 @@ import { collectCSSCapabilities } from "./collect/csscap";
 import { collectBattery } from "./collect/battery";
 import { collectSensors } from "./collect/sensors";
 import { collectNetwork } from "./collect/network";
-import { runFPJS } from "./integrations/fpjs";
+import { runFPJS, collectFpjsForReport } from "./integrations/fpjs";
+
 import { health as apiHealth, version as apiVersion, fpCollect, fpCompare, fpGet } from "./lib/api";
 import "./styles.css";
 
@@ -248,12 +249,33 @@ const utcTime = new Intl.DateTimeFormat(undefined, {
     }
   };
 
-  const copyReport = async () => {
-    const report = buildFullReport(state);
-    const text = JSON.stringify(report, null, 2);
-    await navigator.clipboard.writeText(text);
-    toast("Report copied — all sections included");
+const copyReport = async () => {
+  // 1) Наш текущий отчёт как раньше
+  const ourReport = buildFullReport(state);
+
+  // 2) Дособираем FingerprintJS «на лету» (с таймаутом, чтобы UI не вис)
+  const fpjs = await collectFpjsForReport(4000);
+
+  // (опционально) Короткое резюме FPJS положим и внутрь нашего отчёта для обратной совместимости UI
+  ourReport.fpjs = {
+    status: (fpjs as any).status ?? "collected",
+    visitorId: fpjs.status === "collected" ? fpjs.visitorId : null,
+    conf: fpjs.status === "collected" ? fpjs.conf : null,
+    componentsCount: fpjs.status === "collected" ? fpjs.componentsCount : 0,
+    // большие components внутрь "ours" не тащим — они будут во втором блоке
+    components: fpjs.status === "collected" ? {} : {}
   };
+
+  // 3) ДВЕ проверки одним кликом
+  const combined = {
+    ours: ourReport,          // весь твой текущий отчёт
+    fingerprintjs: fpjs       // «сырые» данные FPJS (со всеми components)
+  };
+
+  const text = JSON.stringify(combined, null, 2);
+  await navigator.clipboard.writeText(text);
+  toast("Report copied — ours + FingerprintJS");
+};
 
   function toast(msg: string) {
     const t = document.createElement("div");
