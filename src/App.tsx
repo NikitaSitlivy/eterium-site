@@ -16,6 +16,12 @@ import { collectSensors } from "./collect/sensors";
 import { collectNetwork } from "./collect/network";
 import { runFPJS, collectFpjsForReport } from "./integrations/fpjs";
 
+import { runClientJS, collectClientjsForReport } from "./integrations/clientjs";
+
+import { collectFpjsRawForDebug } from "./integrations/fpjs";
+import { collectClientjsRawForDebug } from "./integrations/clientjs";
+
+
 import { health as apiHealth, version as apiVersion, fpCollect, fpCompare, fpGet } from "./lib/api";
 import "./styles.css";
 
@@ -130,16 +136,44 @@ function buildFullReport(state: any) {
     sensors: state.sensors ?? notCollected(),
     canvas: state.canvas ?? notCollected({ hash: null, size: null }),
     rtc: state.rtc ?? notCollected({ candidates: [], publicIPs: [], privateIPs: [], types: [] }),
+
+    // FingerprintJS
     fpjs: state.fpjs ?? notCollected({ visitorId: null, conf: null, componentsCount: 0, components: {} }),
+
+// ClientJS
+clientjs: state.clientjs ?? notCollected({
+  fingerprint: null,
+
+  ua: null, browser: null, browserVersion: null,
+  engine: null, engineVersion: null,
+
+  os: null, osVersion: null,
+  device: null, deviceType: null, deviceVendor: null,
+
+  isMobile: null, isTablet: null, isDesktop: null,
+
+  currentRes: null, availRes: null, colorDepth: null, dpr: null,
+
+  timezone: null, timezoneName: null,
+  language: null, systemLanguage: null, languages: null,
+
+  plugins: null, mimeTypes: null, cookiesEnabled: null, doNotTrack: null,
+
+  isCanvas: null, isWebGL: null, canvasHash: null, webglVendor: null, webglRenderer: null,
+
+  screenPrint: null
+}),
+
     api: state.api ?? notCollected()
   };
 }
+
 
 type State = {
   env?: any; screen?: any; storage?: any; webgl?: any; canvas?: any; rtc?: any; perms?: any;
   webgpu?: any; mediacap?: any; webauthn?: any; csscap?: any; battery?: any; sensors?: any; network?: any;
   fpjs?: any;
-  api?: { ok: boolean; version?: string };
+  api?: { ok: boolean; version?: string };clientjs?: any;
 };
 
 export default function App() {
@@ -249,33 +283,106 @@ const utcTime = new Intl.DateTimeFormat(undefined, {
     }
   };
 
+  // безопасные сборщики, которые не просят разрешений
+const SAFE_COLLECTORS = [
+  async () => ({ env: await collectEnv() }),
+  async () => ({ screen: await collectScreen() }),
+  async () => ({ storage: await collectStorage() }),
+  async () => ({ webgl: collectWebGL() }),
+  async () => ({ network: collectNetwork() }),
+  async () => ({ csscap: collectCSSCapabilities() }),
+
+  // добавляем беззвучные секции
+  async () => ({ webgpu: await collectWebGPU() }),
+  async () => ({ mediacap: await collectMediaCapabilities() }),
+  async () => ({ webauthn: await collectWebAuthn() }),
+  async () => ({ battery: await collectBattery() }),
+  async () => ({ sensors: await collectSensors() }),
+
+  async () => ({ perms: await collectPerms() }),
+  async () => {
+  try {
+    const [h, v] = await Promise.all([apiHealth(), apiVersion()]);
+    return { api: { ok: !!(h as any)?.ok, version: (v as any)?.version } };
+  } catch {
+    return { api: { ok: false } };
+  }
+},
+
+
+];
+
+
+// аккуратно собираем и возвращаем свежие кусочки state
+async function collectOursBeforeCopy(): Promise<Partial<State>> {
+  const results = await Promise.allSettled(SAFE_COLLECTORS.map(f => f()));
+  return results.reduce((acc, r) => r.status === "fulfilled" ? { ...acc, ...r.value } : acc, {} as Partial<State>);
+}
+
+// внутри App()
+
 const copyReport = async () => {
-  // 1) Наш текущий отчёт как раньше
-  const ourReport = buildFullReport(state);
+  // 1) Добираем безопасные наши секции прямо сейчас
+  const fresh = await collectOursBeforeCopy(); // env, screen, storage, webgl, network, csscap
+  const mergedState: State = { ...state, ...fresh };
 
-  // 2) Дособираем FingerprintJS «на лету» (с таймаутом, чтобы UI не вис)
-  const fpjs = await collectFpjsForReport(4000);
+  // 2) По возможности дособираем «тяжёлые» наши секции (если ещё не собраны)
+  let canvasRes = mergedState.canvas;
+  let rtcRes = mergedState.rtc;
+  try {
+    if (!canvasRes?.hash) {
+      canvasRes = await runCanvas();            // хэш канваса (наш)
+    }
+  } catch {}
+  try {
+    if (!rtcRes?.candidates?.length) {
+      rtcRes = await runRTC();                  // ICE-кандидаты (наш)
+    }
+  } catch {}
 
-  // (опционально) Короткое резюме FPJS положим и внутрь нашего отчёта для обратной совместимости UI
-  ourReport.fpjs = {
-    status: (fpjs as any).status ?? "collected",
-    visitorId: fpjs.status === "collected" ? fpjs.visitorId : null,
-    conf: fpjs.status === "collected" ? fpjs.conf : null,
-    componentsCount: fpjs.status === "collected" ? fpjs.componentsCount : 0,
-    // большие components внутрь "ours" не тащим — они будут во втором блоке
-    components: fpjs.status === "collected" ? {} : {}
+  // 3) Собираем "облегчённые" FPJS/ClientJS (уже с хешами вместо сырья)
+  const [fpjs, clientjs] = await Promise.all([
+    collectFpjsForReport(4000),
+    collectClientjsForReport(4000),
+  ]);
+
+  // 4) Склеиваем финальный отчёт в формате ours.*
+  const base = buildFullReport({ ...mergedState, canvas: canvasRes, rtc: rtcRes });
+
+  // гарантируем, что device не потеряется в clientjs (на всякий случай)
+  const clientjsFixed =
+    clientjs.status === "collected"
+      ? { ...clientjs, device: (clientjs as any).device ?? (state.clientjs as any)?.device ?? null }
+      : { status: "error", error: (clientjs as any)?.error ?? "clientjs failed" };
+
+  const ours = {
+    ...base,
+    fpjs: fpjs.status === "collected"
+      ? fpjs
+      : { status: "error", visitorId: null, conf: null, componentsCount: 0, components: {}, error: (fpjs as any)?.error ?? "fpjs failed" },
+    clientjs: clientjsFixed,
   };
 
-  // 3) ДВЕ проверки одним кликом
-  const combined = {
-    ours: ourReport,          // весь твой текущий отчёт
-    fingerprintjs: fpjs       // «сырые» данные FPJS (со всеми components)
-  };
-
-  const text = JSON.stringify(combined, null, 2);
-  await navigator.clipboard.writeText(text);
-  toast("Report copied — ours + FingerprintJS");
+  await navigator.clipboard.writeText(JSON.stringify(ours, null, 2));
+  toast("Report copied — full");
 };
+
+
+
+
+// НОВОЕ: сырьё только по полям, которые хешируем (для точечных проверок)
+const copyRawDebug = async () => {
+const [fpjsRaw, clientjsRaw] = await Promise.all([
+  collectFpjsRawForDebug(4000),
+  collectClientjsRawForDebug(4000),
+]);
+  const out = { raw: { fingerprintjs: fpjsRaw, clientjs: clientjsRaw } };
+  await navigator.clipboard.writeText(JSON.stringify(out, null, 2));
+  toast("Raw (debug) copied");
+};
+
+
+
 
   function toast(msg: string) {
     const t = document.createElement("div");
@@ -323,14 +430,16 @@ const copyReport = async () => {
               <div className="dim">API version</div><div>{state.api?.version ?? "—"}</div>
             </div>
             <div className="hr"></div>
-            <div className="pills" style={{ margin: 0, gap: 8, flexWrap: "wrap" }}>
-              <button className="btn" onClick={copyReport}>Copy full report</button>
-              <button className="btn" disabled={saving} onClick={saveSnapshot}>
-                {saving ? "Saving…" : "Save snapshot"}
-              </button>
-              <button className="btn" onClick={copyPermalink} disabled={!fpId}>Copy permalink</button>
-              <button className="btn" onClick={compareWithPrevious} disabled={!lastFpId || !fpId}>Compare with previous</button>
-            </div>
+<div className="pills" style={{ margin: 0, gap: 8, flexWrap: "wrap" }}>
+  <button className="btn" onClick={copyReport}>Copy full report</button>
+  <button className="btn" onClick={copyRawDebug}>Copy raw (debug)</button> {/* NEW */}
+  <button className="btn" disabled={saving} onClick={saveSnapshot}>
+    {saving ? "Saving…" : "Save snapshot"}
+  </button>
+  <button className="btn" onClick={copyPermalink} disabled={!fpId}>Copy permalink</button>
+  <button className="btn" onClick={compareWithPrevious} disabled={!lastFpId || !fpId}>Compare with previous</button>
+</div>
+
             <div className="hr"></div>
             <div className="kv">
               <div className="dim">Snapshot id</div><div style={{wordBreak:"break-all"}}>{fpId ?? "—"}</div>
@@ -534,6 +643,75 @@ const copyReport = async () => {
             <pre className="pre">{(state.rtc?.candidates || []).join("\n") || "—"}</pre>
           </div>
         </Card>
+
+        {/* ClientJS (baseline) */}
+{/* ClientJS */}
+<Card title="ClientJS">
+  <div className="inner">
+    <div className="pills" style={{ marginBottom: 10 }}>
+      <button className="btn" onClick={async ()=>{
+        const clientjs = await runClientJS();
+        setState(s => ({ ...s, clientjs }));
+      }}>
+        Collect ClientJS
+      </button>
+    </div>
+
+    {/* Краткая сводка ключевых полей */}
+    <div className="kv">
+      <div className="dim">Fingerprint</div><div>{state.clientjs?.fingerprint ?? "—"}</div>
+
+      <div className="dim">Browser</div><div>{state.clientjs?.browser ?? "—"}</div>
+      <div className="dim">Browser ver</div><div>{state.clientjs?.browserVersion ?? "—"}</div>
+      <div className="dim">Engine</div><div>{state.clientjs?.engine ?? "—"}</div>
+      <div className="dim">Engine ver</div><div>{state.clientjs?.engineVersion ?? "—"}</div>
+
+      <div className="dim">OS</div><div>{state.clientjs?.os ?? "—"}</div>
+      <div className="dim">OS ver</div><div>{state.clientjs?.osVersion ?? "—"}</div>
+
+      <div className="dim">Device type</div><div>{state.clientjs?.deviceType ?? "—"}</div>
+      <div className="dim">Device vendor</div><div>{state.clientjs?.deviceVendor ?? "—"}</div>
+      <div className="dim">isMobile / Tablet / Desktop</div>
+      <div>
+        {String(state.clientjs?.isMobile ?? "—")} / {String(state.clientjs?.isTablet ?? "—")} / {String(state.clientjs?.isDesktop ?? "—")}
+      </div>
+
+      <div className="dim">Resolution</div><div>{state.clientjs?.currentRes ?? "—"}</div>
+      <div className="dim">Avail res</div><div>{state.clientjs?.availRes ?? "—"}</div>
+      <div className="dim">Color depth</div><div>{state.clientjs?.colorDepth ?? "—"}</div>
+      <div className="dim">DPR</div><div>{state.clientjs?.dpr ?? "—"}</div>
+
+      <div className="dim">Timezone</div><div>{state.clientjs?.timezone ?? "—"}</div>
+      <div className="dim">Timezone (IANA)</div><div>{state.clientjs?.timezoneName ?? "—"}</div>
+
+      <div className="dim">Language</div><div>{state.clientjs?.language ?? "—"}</div>
+      <div className="dim">System language</div><div>{state.clientjs?.systemLanguage ?? "—"}</div>
+      <div className="dim">Languages[]</div>
+      <div>{Array.isArray(state.clientjs?.languages) ? state.clientjs.languages.join(", ") : "—"}</div>
+
+      <div className="dim">Cookies enabled</div><div>{String(state.clientjs?.cookiesEnabled ?? "—")}</div>
+      <div className="dim">Do Not Track</div><div>{String(state.clientjs?.doNotTrack ?? "—")}</div>
+
+      <div className="dim">Plugins</div>
+      <div>{state.clientjs?.plugins ?? "—"}</div>
+
+      <div className="dim">MIME types</div>
+      <div>{state.clientjs?.mimeTypes ?? "—"}</div>
+
+      <div className="dim">Canvas hash</div><div style={{wordBreak:"break-all"}}>{state.clientjs?.canvasHash ?? "—"}</div>
+      <div className="dim">WebGL vendor</div><div>{state.clientjs?.webglVendor ?? "—"}</div>
+      <div className="dim">WebGL renderer</div><div>{state.clientjs?.webglRenderer ?? "—"}</div>
+
+      <div className="dim">ScreenPrint</div>
+      <div>{(state.clientjs?.screenPrint ?? "—")}</div>
+    </div>
+
+    <div className="hr"></div>
+    <pre className="pre">{JSON.stringify(state.clientjs ?? { status:"not_collected" }, null, 2)}</pre>
+  </div>
+</Card>
+
+
 
         {/* FingerprintJS (OSS) */}
         <Card title="FingerprintJS (open-source)">
