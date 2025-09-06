@@ -1,7 +1,8 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import App from "./App"; // лаборатория
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+
+import App from "./App"; // Лаборатория
 import WebRTCLeak from "./pages/checks/WebRTCLeak";
 import CanvasFingerprint from "./pages/checks/CanvasFingerprint";
 import PlaywrightAdapter from "./pages/docs/PlaywrightAdapter";
@@ -10,21 +11,26 @@ import Faq from "./pages/Faq";
 import "./styles.css";
 
 /**
- * "/" — пустышка, чтобы не затирать статический лендинг из index.html.
- * "/lab" — лаборатория (App) и другие маршруты.
+ * HashRouter даёт URL вида https://fingercloak.com/#/lab
+ * Все переходы внутри — без перезагрузки.
+ * На корне "/" оставляем пустышку, чтобы не перекрывать статический лендинг из index.html.
  */
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
-<Routes>
-  <Route path="/" element={<div />} />
-  <Route path="/lab/*" element={<App />} />   {/* было /lab */}
-  <Route path="/check/webrtc-ip-leak" element={<WebRTCLeak />} />
-  <Route path="/check/canvas-fingerprint" element={<CanvasFingerprint />} />
-  <Route path="/docs/playwright-adapter" element={<PlaywrightAdapter />} />
-  <Route path="/docs/puppeteer-adapter" element={<PuppeteerAdapter />} />
-  <Route path="/faq" element={<Faq />} />
-</Routes>
-    </BrowserRouter>
+    <HashRouter>
+      <Routes>
+        {/* пустая страница для "/" (сам лендинг — в index.html) */}
+        <Route path="/" element={<div />} />
+        {/* Лаба и внутренние страницы */}
+        <Route path="/lab/*" element={<App />} />
+        <Route path="/check/webrtc-ip-leak" element={<WebRTCLeak />} />
+        <Route path="/check/canvas-fingerprint" element={<CanvasFingerprint />} />
+        <Route path="/docs/playwright-adapter" element={<PlaywrightAdapter />} />
+        <Route path="/docs/puppeteer-adapter" element={<PuppeteerAdapter />} />
+        <Route path="/faq" element={<Faq />} />
+        {/* страховка: неизвестные маршруты — в /lab */}
+        <Route path="*" element={<Navigate to="/lab" replace />} />
+      </Routes>
+    </HashRouter>
   </React.StrictMode>
 );

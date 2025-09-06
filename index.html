@@ -35,47 +35,23 @@
     <link rel="alternate icon" type="image/svg+xml" sizes="16x16" href="/favicon-16.svg" />
 
     <!-- === STRUCTURED DATA (JSON-LD) === -->
-    <!-- Organization -->
     <script type="application/ld+json">
-    {
-      "@context":"https://schema.org",
-      "@type":"Organization",
-      "name":"FingerCloak",
-      "url":"https://fingercloak.com/",
-      "logo":"https://fingercloak.com/og.png",
-      "sameAs":[
-        "https://github.com/fingercloak",
-        "https://npmjs.com/org/fingercloak"
-      ]
-    }
+    { "@context":"https://schema.org", "@type":"Organization",
+      "name":"FingerCloak","url":"https://fingercloak.com/","logo":"https://fingercloak.com/og.png",
+      "sameAs":["https://github.com/fingercloak","https://npmjs.com/org/fingercloak"] }
     </script>
-    <!-- WebSite (SiteLinks Search Box ready for /search) -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "url": "https://fingercloak.com/",
-      "name": "FingerCloak",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://fingercloak.com/search?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    }
+    { "@context":"https://schema.org","@type":"WebSite",
+      "url":"https://fingercloak.com/","name":"FingerCloak",
+      "potentialAction":{"@type":"SearchAction","target":"https://fingercloak.com/search?q={search_term_string}",
+      "query-input":"required name=search_term_string"} }
     </script>
-    <!-- SoftwareApplication -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "FingerCloak",
-      "applicationCategory": "SecurityApplication",
-      "operatingSystem": "Web",
-      "url": "https://fingercloak.com/",
-      "description": "Toolkit against browser fingerprinting: SDK for Playwright/Puppeteer, profiles, browser extension, and a testing lab.",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-      "publisher": { "@type": "Organization", "name": "FingerCloak" }
-    }
+    { "@context":"https://schema.org","@type":"SoftwareApplication","name":"FingerCloak",
+      "applicationCategory":"SecurityApplication","operatingSystem":"Web","url":"https://fingercloak.com/",
+      "description":"Toolkit against browser fingerprinting: SDK for Playwright/Puppeteer, profiles, browser extension, and a testing lab.",
+      "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+      "publisher":{"@type":"Organization","name":"FingerCloak"} }
     </script>
 
     <!-- === BASE STYLES === -->
@@ -125,8 +101,8 @@
             Protection against Canvas/WebGL fingerprinting, no WebRTC-IP leaks, and stable profiles.
             SDK for Playwright/Puppeteer, a browser extension, and a testing lab.
           </p>
-          <!-- обычная ссылка: SEO дружелюбно; скрипт ниже перехватит клик и сделает SPA-переход -->
-          <a class="cta" href="/lab" aria-describedby="spa-note">Open Lab</a>
+          <!-- Ведём сразу на hash-маршрут (никаких перезагрузок) -->
+          <a class="cta" href="/#/lab" aria-describedby="spa-note">Open Lab</a>
           <span id="spa-note" class="sr-only">Opens without page reload</span>
         </section>
 
@@ -149,43 +125,26 @@
     <!-- small helper -->
     <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
 
-    <!-- Hybrid SEO + SPA: переключение layout и перехват внутренних ссылок -->
+    <!-- Показываем лендинг только на "/" и когда hash пуст -->
     <script>
       (function () {
         const landing = document.getElementById('landing');
         const root = document.getElementById('root');
 
-        function isHomePathname(p) {
-          return p === '/' || p === '/index.html';
+        function isHome() {
+          const homePath = (location.pathname === '/' || location.pathname === '/index.html');
+          const hashHome = (location.hash === '' || location.hash === '#' || location.hash === '#/');
+          return homePath && hashHome;
         }
-
         function syncLayout() {
-          const home = isHomePathname(location.pathname);
-          if (landing) landing.style.display = home ? '' : 'none';
-          if (root) root.style.display = home ? 'none' : '';
+          const showLanding = isHome();
+          if (landing) landing.style.display = showLanding ? '' : 'none';
+          if (root) root.style.display = showLanding ? 'none' : '';
         }
-
-        // начальная отрисовка + реакции на изменения истории
+        // начальная отрисовка + реакции на изменения hash/истории
         syncLayout();
+        window.addEventListener('hashchange', syncLayout);
         window.addEventListener('popstate', syncLayout);
-
-        // перехватываем внутри-сайтовые переходы к SPA-маршрутам
-        const spaPrefixes = ['/lab', '/faq', '/docs/', '/check/'];
-        document.addEventListener('click', function (e) {
-          const a = e.target && e.target.closest ? e.target.closest('a') : null;
-          if (!a) return;
-          if (a.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-
-          const url = new URL(a.href, location.href);
-          const sameOrigin = url.origin === location.origin;
-          const toSpa = spaPrefixes.some(p => url.pathname.startsWith(p));
-
-          if (sameOrigin && toSpa) {
-            e.preventDefault();
-            history.pushState({}, '', url.pathname + url.search + url.hash);
-            window.dispatchEvent(new Event('popstate')); // переключить layout
-          }
-        });
       })();
     </script>
 
