@@ -15,6 +15,7 @@ import { collectBattery } from "./collect/battery";
 import { collectSensors } from "./collect/sensors";
 import { collectNetwork } from "./collect/network";
 import { runFPJS } from "./integrations/fpjs";
+import { health as apiHealth, version as apiVersion } from "./lib/api";
 import "./styles.css";
 
 /* ---------- Header bits ---------- */
@@ -57,13 +58,10 @@ const HeroViz: React.FC<{ env?: any; screen?: any }> = ({ env, screen }) => {
       <div className="hero-grid">
         <div className="dim">Device</div><div style={{fontWeight:700}}>{device}</div>
         <div className="dim">Browser</div><div>{browser}</div>
-
         <div className="dim">OS</div><div style={{fontWeight:700}}>{os}</div>
         <div className="dim">Languages</div><div>{env?.languages?.join(", ") || "—"}</div>
-
         <div className="dim">Timezone</div><div style={{fontWeight:700}}>{env?.timezone || "—"}</div>
         <div className="dim">DPR</div><div>{screen?.dpr ?? "—"}</div>
-
         <div className="dim">Screen</div><div>{screen?.screen ?? "—"}</div>
         <div className="dim">Inner</div><div>{screen?.inner ?? "—"}</div>
       </div>
@@ -91,8 +89,7 @@ const LinkPill: React.FC<{ href: string; label: string; title?: string; icon?: R
 );
 
 const QuickLinks: React.FC = () => (
-  <nav aria-label="Quick tools"
-       style={{maxWidth:1100, margin:"18px auto 6px", padding:"0 16px"}}>
+  <nav aria-label="Quick tools" style={{maxWidth:1100, margin:"18px auto 6px", padding:"0 16px"}}>
     <div style={{display:"flex", flexWrap:"wrap", gap: 10}}>
       <LinkPill href="/check/webrtc-ip-leak" label="WebRTC IP check"
         icon={<svg width="16" height="16" viewBox="0 0 24 24"><path d="M3 12h18M12 3v18" stroke="#38e8ff" strokeWidth="2" /></svg>} />
@@ -110,18 +107,14 @@ const QuickLinks: React.FC = () => (
 
 /* ---------- App ---------- */
 
-// Build a full report object even for not-yet-collected sections
 function buildFullReport(state: any) {
   const notCollected = (extra: Record<string, any> = {}) => ({ status: "not_collected", ...extra });
-
   return {
     meta: {
       when: new Date().toISOString(),
       page: typeof location !== "undefined" ? location.href : "",
       app: "FingerCloak Lab"
     },
-
-    // Collected on load
     env: state.env ?? notCollected(),
     screen: state.screen ?? notCollected(),
     storage: state.storage ?? notCollected(),
@@ -129,17 +122,15 @@ function buildFullReport(state: any) {
     perms: state.perms ?? notCollected(),
     network: state.network ?? notCollected({ supported: "unknown" }),
     csscap: state.csscap ?? notCollected(),
-
-    // On-demand sections
     webgpu: state.webgpu ?? notCollected({ supported: "unknown" }),
     mediacap: state.mediacap ?? notCollected({ supported: "unknown" }),
     webauthn: state.webauthn ?? notCollected({ supported: "unknown" }),
     battery: state.battery ?? notCollected({ supported: "unknown" }),
     sensors: state.sensors ?? notCollected(),
-
     canvas: state.canvas ?? notCollected({ hash: null, size: null }),
     rtc: state.rtc ?? notCollected({ candidates: [], publicIPs: [], privateIPs: [], types: [] }),
     fpjs: state.fpjs ?? notCollected({ visitorId: null, conf: null, componentsCount: 0, components: {} }),
+    api: state.api ?? notCollected()
   };
 }
 
@@ -147,6 +138,7 @@ type State = {
   env?: any; screen?: any; storage?: any; webgl?: any; canvas?: any; rtc?: any; perms?: any;
   webgpu?: any; mediacap?: any; webauthn?: any; csscap?: any; battery?: any; sensors?: any; network?: any;
   fpjs?: any;
+  api?: { ok: boolean; version?: string };
 };
 
 export default function App() {
@@ -162,7 +154,19 @@ export default function App() {
       const perms = await collectPerms();
       const network = collectNetwork();
       const csscap = collectCSSCapabilities();
-      setState(s => ({ ...s, env, screen, storage, webgl, perms, network, csscap }));
+
+      // ✅ Проверка API (health + version)
+      let api: State["api"] = { ok: false };
+      try {
+        const h = await apiHealth();
+        const v = await apiVersion();
+        api = { ok: Boolean((h as any)?.ok), version: (v as any)?.version };
+      } catch (e) {
+        api = { ok: false };
+        console.warn("API check failed:", e);
+      }
+
+      setState(s => ({ ...s, env, screen, storage, webgl, perms, network, csscap, api }));
     })();
   }, []);
 
@@ -170,7 +174,6 @@ export default function App() {
     const report = buildFullReport(state);
     const text = JSON.stringify(report, null, 2);
     await navigator.clipboard.writeText(text);
-    // toast
     const t = document.createElement("div");
     t.textContent = "Report copied — all sections included";
     Object.assign(t.style, {
@@ -197,7 +200,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Quick links to tools/docs */}
       <QuickLinks />
 
       <div className="grid">
@@ -211,6 +213,8 @@ export default function App() {
             <div className="kv">
               <div className="dim">Page</div><div>{location.href}</div>
               <div className="dim">Time</div><div>{now.toISOString().replace("T"," ").replace("Z"," UTC")}</div>
+              <div className="dim">API</div><div>{state.api?.ok ? "online" : "offline"}</div>
+              <div className="dim">API version</div><div>{state.api?.version ?? "—"}</div>
             </div>
             <div className="hr"></div>
             <div className="pills" style={{ margin: 0 }}>
@@ -395,8 +399,10 @@ export default function App() {
             </div>
             <div className="kv">
               <div className="dim">Candidates found</div><div>{state.rtc?.candidates?.length ?? 0}</div>
-              <div className="dim">Private addresses</div><div>{state.rtc?.privateIPs?.length ? state.rtc.privateIPs.join(", ") : "—"}</div>
-              <div className="dim">Public addresses</div><div>{state.rtc?.publicIPs?.length ? state.rtc.publicIPs.join(", ") : "—"}</div>
+              <div className="dim">Private addresses</div>
+              <div>{state.rtc?.privateIPs?.length ? state.rtc.privateIPs.join(", ") : "—"}</div>
+              <div className="dim">Public addresses</div>
+              <div>{state.rtc?.publicIPs?.length ? state.rtc.publicIPs.join(", ") : "—"}</div>
               <div className="dim">Types</div><div>{state.rtc?.types?.length ? state.rtc.types.join(", ") : "—"}</div>
             </div>
             <div className="hr"></div>
