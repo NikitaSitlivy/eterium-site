@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Lenis base */
+html { height: auto; }
+html.lenis { height: auto; }
+html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto; }
+.lenis.lenis-stopped { overflow: hidden; }
+[data-lenis-prevent] { overscroll-behavior: contain; }
+
+/* убираем горизонтальный скролл от эффектов */
+html, body { overflow-x: hidden; }
+
+.section { @apply relative w-full max-w-6xl mx-auto px-6 md:px-10; }
+h1, h2, h3 { letter-spacing: -0.02em; }
+
+.blurry-glow {
+  position: absolute;
+  inset: auto;
+  width: 40rem;
+  height: 40rem;
+  filter: blur(120px);
+  background: radial-gradient(45% 45% at 50% 50%, rgba(148,180,255,0.25) 0%, rgba(122,162,255,0.08) 40%, rgba(10,11,15,0) 70%);
+  pointer-events: none;
+}
+
+a.cta {
+  @apply inline-flex items-center gap-2 rounded-2xl px-5 py-3 bg-eter-accent/10 text-eter-text hover:bg-eter-accent/20 transition shadow-soft;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(122,162,255,0.25);
+}
+
+.card {
+  @apply rounded-3xl bg-eter-card/80 border border-white/5 shadow-soft;
+  backdrop-filter: blur(10px);
+}
+
+/* ------------------ Gravity Lens (курсор) ------------------ */
+.cursor-orb{
+  position: fixed;
+  left: 0; top: 0;
+  width: 22rem; height: 22rem;               /* базовый размер */
+  transform: translate3d(var(--x), var(--y), 0) translate(-50%, -50%) scale(var(--scale, 1));
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 5;
+  will-change: transform, opacity;
+  background:
+    radial-gradient(closest-side at 50% 50%,
+      rgba(150,180,255,0.45) 0%,
+      rgba(150,180,255,0.25) 38%,
+      rgba(150,180,255,0.10) 56%,
+      rgba(150,180,255,0.00) 74%);
+  mix-blend-mode: screen;
+  filter: blur(8px);
+  opacity: 0.85;
+}
+
+/* scroll hint (если понадобится, сейчас не используем) */
+.scroll-indicator{
+  position: absolute;
+  left: 50%; bottom: 1.25rem;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: rgba(255,255,255,.5);
+  animation: floatDown 2.2s ease-in-out infinite;
+  pointer-events: none;
+  user-select: none;
+}
+@keyframes floatDown{
+  0%,100% { transform: translateX(-50%) translateY(0);   opacity: .6; }
+  50%     { transform: translateX(-50%) translateY(6px); opacity: 1; }
+}
+
+/* --- SAFE REVEAL --- */
+/* Важно: прячем только если на <html> есть класс .js */
+.js .will-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .7s ease, transform .7s ease;
+}
+.js .will-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}

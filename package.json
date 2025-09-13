@@ -1,0 +1,29 @@
+{
+  "name": "eterium-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --open",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@studio-freight/lenis": "^1.0.35",
+    "gsap": "^3.12.5",
+    "three": "^0.160.0",
+    "vue": "^3.4.27",
+    "vue-router": "^4.3.2"
+  },
+  "devDependencies": {
+    "@types/three": "^0.164.0",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.2",
+    "vue-tsc": "^2.0.29"
+  }
+}
