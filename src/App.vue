@@ -7,7 +7,7 @@
     ></canvas>
 
     <!-- Весь контент поверх -->
-    <div class="relative z-10 bg-02">
+    <div class="relative z-10 bg-02 min-h100">
       <!-- Global Header -->
       <SiteHeader
         :isAuthed="isAuthed"
@@ -217,12 +217,12 @@ function validate(): boolean {
   errors.email = errors.password = errors.confirm = errors.username = undefined
   submitError.value = ''
   const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  const unameRx = /^[a-zA-Z0-9_]{3,20}$/
+  const unameRx = /^[a-zA-Z0-9_.-]{3,20}$/
   if (!form.email || !emailRx.test(form.email)) errors.email = 'Enter a valid email'
   if (!form.password || form.password.length < 8) errors.password = 'Min 8 characters'
   if (mode.value === 'signup') {
     if (!form.username) errors.username = 'Enter a username'
-    else if (!unameRx.test(form.username)) errors.username = '3–20 letters, digits or _'
+    else if (!unameRx.test(form.username)) errors.username = '3–20 letters, digits, _ . -'
     if (!form.confirm) errors.confirm = 'Confirm your password'
     if (!errors.password && form.confirm !== form.password) errors.confirm = 'Passwords do not match'
   }
@@ -288,3 +288,5 @@ async function logout() {
   }
 }
 </script>
+
+
