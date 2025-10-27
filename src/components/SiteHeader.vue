@@ -38,7 +38,7 @@
         <div v-else class="relative usermenu-root">
           <button class="user-pill" @click.stop.prevent="userMenu = !userMenu">
             <!-- AVATAR: если есть картинка — показываем её, иначе букву -->
-            <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" class="avatar-img" />
+            <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" class="avatar-img"   referrerpolicy="no-referrer" />
             <span v-else class="avatar-dot">{{ avatarInitial }}</span>
             <span class="user-label">{{ displayLabel }}</span>
           </button>

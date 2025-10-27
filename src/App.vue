@@ -96,7 +96,27 @@
                     {{ pending ? (mode==='signin' ? 'Signing in…' : 'Creating…') : (mode==='signin' ? 'Sign in' : 'Create account') }}
                   </button>
                 </div>
+                <div class="flex items-center justify-between">
+                  <button
+                    v-if="mode==='signin'"
+                    type="button"
+                    class="text-sm text-white/70 hover:text-white underline underline-offset-2"
+                    @click="sendResetEmail"
+                    :disabled="pending"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <p v-if="submitError" class="text-red-400 text-sm">{{ submitError }}</p>
+                <p v-if="submitInfo" class="text-green-400 text-sm">{{ submitInfo }}</p>
+
+                <div class="pt-2">
+                  <div class="text-center text-xs uppercase tracking-wider text-white/50 mb-3">or continue with</div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button type="button" class="glass-btn w-full" @click="oauth('google')" :disabled="pending">Google</button>
+                    <button type="button" class="glass-btn w-full" @click="oauth('discord')" :disabled="pending">Discord</button>
+                  </div>
+                </div>
               </form>
             </Transition>
           </div>
@@ -171,10 +191,26 @@ onMounted(() => {
   window.addEventListener('keydown', onKey)
   if (bgCanvas.value) nebula = initNebula(bgCanvas.value)
   nebula?.setMouseEnabled(false)
-  setOrbitFromScroll()
-  nebula?.setBoost(0)
-  tickBoost()
+
+  const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_IN') {
+      authOpen.value = false
+      // сюда можно добавить тост «Welcome back»
+      window.history.replaceState({}, '', window.location.pathname + window.location.search)
+      // перенаправим в аккаунт (или по своему роутингу)
+      if (window.location.pathname === '/' || window.location.pathname === '/login') {
+        window.location.assign('/account')
+      }
+    }
+    if (event === 'PASSWORD_RECOVERY') {
+      window.location.assign('/reset')
+    }
+  })
+
+  // если делаешь dispose:
+  onBeforeUnmount(() => { sub?.subscription.unsubscribe() })
 })
+
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(rafBoost)
@@ -194,6 +230,7 @@ const showPass = ref(false)
 const form = reactive({ email: '', password: '', confirm: '', username: '' })
 const errors = reactive<{ email?: string; password?: string; confirm?: string; username?: string }>({})
 const submitError = ref('')
+const submitInfo = ref('')
 const showVerifyPopup = ref(false)
 const pending = ref(false)
 
@@ -209,6 +246,7 @@ function openAuth(nextMode: Mode) {
   mode.value = nextMode
   authOpen.value = true
   submitError.value = ''
+  submitInfo.value = ''
   errors.email = errors.password = errors.confirm = errors.username = undefined
 }
 function closeAuth() { authOpen.value = false }
@@ -232,6 +270,7 @@ function validate(): boolean {
 async function onSubmit() {
   if (!validate()) return
   submitError.value = ''
+  submitInfo.value = ''
   pending.value = true
   try {
     if (mode.value === 'signin') {
@@ -274,6 +313,45 @@ async function onSubmit() {
     authOpen.value = false
   } catch (e: any) {
     submitError.value = e?.message ?? 'Auth error'
+  } finally {
+    pending.value = false
+  }
+}
+
+async function sendResetEmail() {
+  submitError.value = ''
+  submitInfo.value = ''
+  if (!form.email) {
+    errors.email = 'Enter your email to reset'
+    return
+  }
+  try {
+    pending.value = true
+    const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
+      redirectTo: `${window.location.origin}/reset`
+    } as any)
+    if (error) throw error
+    submitInfo.value = 'We\'ve sent a reset link to your email.'
+  } catch (e: any) {
+    submitError.value = e?.message ?? 'Failed to send reset email'
+  } finally {
+    pending.value = false
+  }
+}
+
+async function oauth(provider: 'google' | 'discord') {
+  submitError.value = ''
+  submitInfo.value = ''
+  try {
+    pending.value = true
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin }
+    })
+    if (error) throw error
+    // Browser navigates to provider; no further action here
+  } catch (e: any) {
+    submitError.value = e?.message ?? 'OAuth error'
   } finally {
     pending.value = false
   }
