@@ -112,9 +112,9 @@
 
                 <div class="pt-2">
                   <div class="text-center text-xs uppercase tracking-wider text-white/50 mb-3">or continue with</div>
-                  <div class="grid grid-cols-2 gap-2">
+                  <div class="grid grid-cols-1">
                     <button type="button" class="glass-btn w-full" @click="oauth('google')" :disabled="pending">Google</button>
-                    <button type="button" class="glass-btn w-full" @click="oauth('discord')" :disabled="pending">Discord</button>
+                    <!-- <button type="button" class="glass-btn w-full" @click="oauth('apple')" :disabled="pending">Apple</button> -->
                   </div>
                 </div>
               </form>
@@ -139,12 +139,15 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { initNebula, type NebulaHandle } from './lib/nebula'
 import SiteHeader from './components/SiteHeader.vue'
 import { useAuth } from './composables/useAuth'
 import UiPopup from './components/UiPopup.vue'
 import UiSpinner from './components/UiSpinner.vue'
 import { supabase } from './lib/superbase'
+
+const router = useRouter()
 
 const mouse = reactive({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
 function onMouse(e: MouseEvent) { mouse.x = e.clientX; mouse.y = e.clientY }
@@ -339,7 +342,7 @@ async function sendResetEmail() {
   }
 }
 
-async function oauth(provider: 'google' | 'discord') {
+async function oauth(provider: 'google' ) {
   submitError.value = ''
   submitInfo.value = ''
   try {
@@ -361,6 +364,7 @@ async function logout() {
   try {
     pending.value = true
     await signOut()
+    router.push('/')
   } finally {
     pending.value = false
   }

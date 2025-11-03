@@ -36,7 +36,48 @@
         <button v-if="!isAuthed" class="nav-cta nav-cta--accent" @click.stop.prevent="onSignup">Sign up</button>
 
         <div v-else class="relative usermenu-root">
-          <button class="user-pill" @click.stop.prevent="userMenu = !userMenu">
+          <!-- 🔔 NOTIFICATIONS -->
+<div class="notif-root relative">
+  <button class="notif-btn" @click.stop="toggleNotifs">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M10 21h4a2 2 0 0 1-4 0Zm2-19a7 7 0 0 1 7 7v4l1 2H4l1-2v-4a7 7 0 0 1 7-7Z"
+        stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+      />
+    </svg>
+    <span v-if="unreadCount > 0" class="notif-dot">{{ unreadCount }}</span>
+  </button>
+
+  <transition name="fade">
+    <div v-if="panelOpen" class="notif-panel glass-card glass-panel">
+      <div class="notif-head">
+        <span>Notifications</span>
+        <button class="mini-btn" @click="markAllRead">Mark all read</button>
+      </div>
+
+      <div v-if="notifs.length === 0" class="notif-empty">
+        No notifications yet.
+      </div>
+      <div v-else class="notif-list">
+        <div
+          v-for="n in notifs"
+          :key="n.id"
+          class="notif-item"
+          :class="{ unread: !n.read_at }"
+        >
+          <div class="notif-type">{{ n.type }}</div>
+          <div class="notif-body">
+            <div class="notif-text">{{ renderNotifTitle(n) }}</div>
+            <div class="notif-time">{{ new Date(n.created_at).toLocaleString() }}</div>
+          </div>
+        </div>
+      </div>
+      <RouterLink to="/notifications" class="notif-footer" @click="panelOpen = false">View all</RouterLink>
+    </div>
+  </transition>
+</div>
+
+          <button class="user-pill" @click.stop.prevent="toggleUserMenu">
             <!-- AVATAR: если есть картинка — показываем её, иначе букву -->
             <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" class="avatar-img"   referrerpolicy="no-referrer" />
             <span v-else class="avatar-dot">{{ avatarInitial }}</span>
@@ -90,7 +131,7 @@
         </div>
       </div>
 
-      <button class="md:hidden burger" @click="open = !open" :aria-expanded="open">
+      <button class="md:hidden burger" @click="toggleDrawer" :aria-expanded="open">
         <span class="sr-only">Menu</span>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
           <path :class="{ 'opacity-0': open }" d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -145,6 +186,34 @@ const email = computed(() => user.value?.email ?? '')
 /* ---- Базовый профиль из таблицы profiles ---- */
 const avatarUrl = ref<string | null>(null)
 const profileUsername = ref<string | null>(null)
+function renderNotifTitle(n: any) {
+  switch (n.type) {
+    case 'purchase':
+      return `Purchase: ${n.data?.item_name ?? 'Unknown item'}`
+    case 'drop':
+      return `You got a drop: ${n.data?.title ?? 'Unknown drop'}`
+    case 'message':
+      return `New message from ${n.data?.from ?? 'someone'}`
+    case 'system':
+      return n.data?.text ?? 'System update'
+    default:
+      return 'Notification'
+  }
+}
+
+const notifs = ref<any[]>([])
+const unreadCount = computed(() => notifs.value.filter(n => !n.read_at).length)
+const panelOpen = ref(false)
+
+async function loadNotifs() {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(20)
+  if (!error) notifs.value = data
+}
+onMounted(loadNotifs)
 
 async function loadHeaderProfile() {
   avatarUrl.value = null
@@ -179,7 +248,16 @@ const profileUrl = computed(() =>
     : '/profile'
 )
 
-const unreadCount = ref(0)
+async function markAllRead() {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .is('read_at', null)
+  if (!error) {
+    notifs.value = notifs.value.map(n => ({ ...n, read_at: new Date().toISOString() }))
+  }
+}
+
 const isAdmin = computed(() => user.value?.app_metadata?.role === 'admin')
 
 function linkClass(active: boolean) {
@@ -188,11 +266,12 @@ function linkClass(active: boolean) {
 
 function onSignin(){ emit('signin'); open.value = false }
 function onSignup(){ emit('signup'); open.value = false }
-function onLogout(){ emit('logout'); userMenu.value = false; open.value = false }
+function onLogout(){ emit('logout'); userMenu.value = false; panelOpen.value = false; open.value = false }
 
 function onDocClick(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (!target.closest('.usermenu-root')) userMenu.value = false
+  if (!target.closest('.notif-root')) panelOpen.value = false
 }
 
 function onProfileUpdated(e: Event) {
@@ -209,11 +288,46 @@ onMounted(() => {
   supportsBackdrop.value = !!(window.CSS && CSS.supports && CSS.supports('backdrop-filter: blur(10px)'))
   document.addEventListener('click', onDocClick)
     window.addEventListener('profile:updated', onProfileUpdated)
+    window.addEventListener('notifications:updated', onNotifsUpdated)
+  const uid = user.value?.id
+  if (uid) {
+    supabase
+      .channel('notif-feed')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${uid}`
+        },
+        payload => {
+          notifs.value.unshift(payload.new)
+        }
+      )
+      .subscribe()
+  }
+
 })
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocClick)
     window.removeEventListener('profile:updated', onProfileUpdated)
+    window.removeEventListener('notifications:updated', onNotifsUpdated)
 })
+
+function onNotifsUpdated() { loadNotifs() }
+function toggleNotifs(){
+  panelOpen.value = !panelOpen.value
+  if (panelOpen.value) { userMenu.value = false; open.value = false }
+}
+function toggleUserMenu(){
+  userMenu.value = !userMenu.value
+  if (userMenu.value) { panelOpen.value = false; open.value = false }
+}
+function toggleDrawer(){
+  open.value = !open.value
+  if (open.value) { panelOpen.value = false; userMenu.value = false }
+}
 </script>
 
 <style scoped>
@@ -307,6 +421,7 @@ onBeforeUnmount(() => {
     radial-gradient(120% 120% at 10% -20%, rgba(160,190,255,.10), rgba(255,255,255,0) 60%),
     linear-gradient(180deg, rgba(18,20,26,.96), rgba(12,14,18,.96));
   box-shadow: 0 12px 36px rgba(0,0,0,.45);
+  top: 32px;
   overflow:hidden; display:flex; flex-direction:column;
 }
 .user-item{
@@ -336,5 +451,6 @@ onBeforeUnmount(() => {
   display: block; padding: .625rem .5rem; color: rgba(255,255,255,.9); border-radius: .6rem;
 }
 .drawer-link:hover{ background: rgba(255,255,255,.06); }
-.site-header:not(.backdrop-supported){ background: rgba(12,14,18,.96); }
+.site-header:not(.backdrop-supported){ background: rgba(12,14,18,.96) !important }
+
 </style>

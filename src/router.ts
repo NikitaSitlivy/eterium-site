@@ -15,6 +15,9 @@ const Profile = () => import('./pages/Profile.vue')            // ⬅ добав
 const PublicProfile = () => import('./pages/Profile.vue')       // ⬅ тот же компонент
 const InventoryPage = () => import('./pages/InventoryPage.vue') 
 const Usersage = () => import('./pages/Users.vue') 
+const Notifications = () => import('./pages/Notifications.vue')
+const Settings = () => import('./pages/Settings.vue')
+const Messages = () => import('./pages/Messages.vue')
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -28,19 +31,28 @@ export const router = createRouter({
     { path: '/reset', component: Reset },
     { path: '/account', component: Account, meta: { auth: true } },
     { path: '/profile', component: Profile, meta: { auth: true } },   
+     { path: '/messages', component: Messages, meta: { auth: true } },   
     { path: '/u/:username', component: PublicProfile },     
       { path: '/inventory', name: 'inventory', component: InventoryPage },             
     { path: '/debug/supabase', component: DebugSupabase },
-    { path: '/users', component: Usersage },
+    { path: '/notifications', component: Notifications, meta: { auth: true } },
+    { path: '/settings', component: Settings, meta: { auth: true } },
+    { path: '/users', component: Usersage, meta: { auth: true }  },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
   scrollBehavior() { return { left: 0, top: 0 } }
 })
 
 router.beforeEach(async (to) => {
+
   if (!to.meta?.auth) return true
-  const { data } = await supabase.auth.getUser()
-  if (!data.user) return `/login?redirect=${encodeURIComponent(to.fullPath)}`
+
+
+  const { data: sessionData } = await supabase.auth.getSession()
+  if (!sessionData.session) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
+
   return true
 })
 

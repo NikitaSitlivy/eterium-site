@@ -23,10 +23,14 @@ const form = reactive<{ username: string; avatar_url: string | null }>({
   avatar_url: null,
 });
 
-const pageLoading = ref(true); // начальная загрузка страницы
-const pending = ref(false); // локальные операции (save, upload, etc.)
+const pageLoading = ref(true);
+const pending = ref(false);
 const msg = ref<string | null>(null);
 const err = ref<string | null>(null);
+function goChat(otherId: string) {
+  // просто открываем страницу мессенджера с выбранным собеседником
+  router.push({ path: "/messages", query: { to: otherId } });
+}
 
 /* ------------ achievements ------------ */
 type AchRow = {
@@ -62,11 +66,114 @@ async function loadAchievementsByUser(userId: string) {
       .limit(8);
     if (error) throw error;
     achRows.value = data ?? [];
-  } catch (e) {
+  } catch {
     achRows.value = [];
   } finally {
     achLoading.value = false;
   }
+}
+
+/* ------------ FRIENDS ------------ */
+type FriendItem = {
+  user_id: string; // id другого человека
+  username: string | null;
+  avatar_url: string | null;
+};
+
+const friendsLoading = ref(false);
+const friends = ref<FriendItem[]>([]);
+const incoming = ref<FriendItem[]>([]);
+const outgoing = ref<FriendItem[]>([]);
+
+async function loadFriends(userId: string) {
+  friendsLoading.value = true;
+  friends.value = [];
+  incoming.value = [];
+  outgoing.value = [];
+
+  try {
+    // берём все записи, где я либо requester, либо addressee
+    const { data, error } = await supabase
+      .from("friendships")
+      .select("id, requester, addressee, status")
+      .or(`requester.eq.${userId},addressee.eq.${userId}`);
+    if (error) throw error;
+
+    if (!data || data.length === 0) return;
+
+    // ids всех "вторых" пользователей
+    const otherIds = new Set<string>();
+    for (const row of data) {
+      const otherId = row.requester === userId ? row.addressee : row.requester;
+      otherIds.add(otherId);
+    }
+
+    // заберём их профили
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .in("id", Array.from(otherIds));
+
+    const profMap = new Map<
+      string,
+      { username: string | null; avatar_url: string | null }
+    >();
+    (profs ?? []).forEach((p) => {
+      // нормализуем аватар: может быть путь
+      let url = p.avatar_url as string | null;
+      if (url && !/^https?:\/\//i.test(url)) {
+        const { data } = supabase.storage.from("avatars").getPublicUrl(url);
+        url = data.publicUrl || null;
+      }
+      profMap.set(p.id, { username: p.username, avatar_url: url });
+    });
+
+    for (const row of data) {
+      const otherId = row.requester === userId ? row.addressee : row.requester;
+      const prof = profMap.get(otherId) || { username: null, avatar_url: null };
+      const entry: FriendItem = {
+        user_id: otherId,
+        username: prof.username,
+        avatar_url: prof.avatar_url,
+      };
+
+      if (row.status === "accepted") {
+        friends.value.push(entry);
+      } else if (row.status === "pending") {
+        if (row.addressee === userId) {
+          incoming.value.push(entry);
+        } else {
+          outgoing.value.push(entry);
+        }
+      }
+    }
+  } finally {
+    friendsLoading.value = false;
+  }
+}
+
+async function acceptIncomingFriend(otherId: string) {
+  const uid = user.value?.id;
+  if (!uid) return;
+  const { error } = await supabase
+    .from("friendships")
+    .update({ status: "accepted" })
+    .eq("requester", otherId)
+    .eq("addressee", uid);
+  if (!error) {
+    await loadFriends(uid);
+  }
+}
+
+async function cancelOutgoingFriend(otherId: string) {
+  const uid = user.value?.id;
+  if (!uid) return;
+  await supabase
+    .from("friendships")
+    .delete()
+    .eq("requester", uid)
+    .eq("addressee", otherId);
+  await loadFriends(uid);
 }
 
 /* ------------ popup ------------ */
@@ -89,14 +196,13 @@ const emailVerified = computed(() =>
   )
 );
 
-// Derive a safe avatar URL (supports stored path or full URL)
 const avatarSrc = computed<string | null>(() => {
-  const u = profile.avatar_url || null
-  if (!u) return null
-  if (/^https?:\/\//i.test(u)) return u
-  const { data } = supabase.storage.from('avatars').getPublicUrl(u)
-  return data.publicUrl || null
-})
+  const u = profile.avatar_url || null;
+  if (!u) return null;
+  if (/^https?:\/\//i.test(u)) return u;
+  const { data } = supabase.storage.from("avatars").getPublicUrl(u);
+  return data.publicUrl || null;
+});
 
 /* ------------ helpers: avatars ------------ */
 function extractAvatarPath(
@@ -126,13 +232,12 @@ async function loadProfile(userId: string) {
       .maybeSingle();
     if (error) throw error;
     profile.username = data?.username ?? "";
-    // Normalize avatar URL: allow path or full URL in DB
-    const raw = (data?.avatar_url as string | null) ?? null
+    const raw = (data?.avatar_url as string | null) ?? null;
     if (raw && !/^https?:\/\//i.test(raw)) {
-      const { data: url } = supabase.storage.from('avatars').getPublicUrl(raw)
-      profile.avatar_url = url.publicUrl || null
+      const { data: url } = supabase.storage.from("avatars").getPublicUrl(raw);
+      profile.avatar_url = url.publicUrl || null;
     } else {
-      profile.avatar_url = raw
+      profile.avatar_url = raw;
     }
     form.username = profile.username;
     form.avatar_url = profile.avatar_url;
@@ -156,7 +261,6 @@ async function saveProfile() {
       throw new Error("Username: 3–20 letters, digits or _");
     }
 
-    // проверка уникальности
     const { data: existing, error: existsErr } = await supabase
       .from("profiles")
       .select("id")
@@ -167,13 +271,11 @@ async function saveProfile() {
       throw new Error("This username is already taken");
     }
 
-    const { error: upErr } = await supabase
-      .from("profiles")
-      .upsert({
-        id: currentId,
-        username: uname,
-        avatar_url: form.avatar_url ?? null,
-      });
+    const { error: upErr } = await supabase.from("profiles").upsert({
+      id: currentId,
+      username: uname,
+      avatar_url: form.avatar_url ?? null,
+    });
     if (upErr) throw upErr;
 
     profile.username = uname;
@@ -186,8 +288,8 @@ async function saveProfile() {
       })
     );
 
-    // подтянуть достижения на всякий случай
     await loadAchievementsByUser(currentId);
+    await loadFriends(currentId);
   } catch (e: any) {
     const m = e?.message ?? "Failed to update profile";
     err.value = m;
@@ -197,7 +299,7 @@ async function saveProfile() {
   }
 }
 
-/* ------------ avatar upload (DnD) ------------ */
+/* ------------ avatar upload ------------ */
 const MAX_MB = 3;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 const acknowledged = ref(false);
@@ -323,12 +425,10 @@ onMounted(async () => {
   try {
     const { data } = await supabase.auth.getUser();
     const uid = data.user?.id;
-    if (!uid) {
-      // нет логина — просто показываем страницу без данных
-      return;
-    }
+    if (!uid) return;
     await loadProfile(uid);
     await loadAchievementsByUser(uid);
+    await loadFriends(uid);
   } finally {
     pageLoading.value = false;
   }
@@ -385,7 +485,7 @@ onMounted(async () => {
             :src="avatarSrc"
             alt="avatar"
             class="w-28 h-28 rounded-full object-cover border border-white/10"
-              referrerpolicy="no-referrer"
+            referrerpolicy="no-referrer"
           />
           <div
             v-else
@@ -496,6 +596,119 @@ onMounted(async () => {
           >
             Cancel
           </button>
+        </div>
+        <!-- ===== FRIENDS SECTION ===== -->
+        <div class="sep my-6"></div>
+        <h3 class="text-base font-semibold mb-3">Friends</h3>
+        <div v-if="friendsLoading" class="text-white/60 text-sm">
+          Loading friends…
+        </div>
+        <div v-else class="space-y-4">
+          <!-- accepted -->
+          <div>
+            <h4 class="text-sm text-white/60 mb-2">Your friends</h4>
+            <div v-if="friends.length === 0" class="text-white/35 text-sm">
+              No friends yet.
+            </div>
+           <div v-else class="flex flex-wrap gap-2">
+  <div v-for="f in friends" :key="f.user_id" class="friend-pill">
+    <RouterLink
+      :to="f.username ? `/u/${encodeURIComponent(f.username)}` : `/users`"
+      class="flex items-center gap-2 shrink-0"
+    >
+      <img
+        v-if="f.avatar_url"
+        :src="f.avatar_url"
+        class="w-6 h-6 rounded-full object-cover"
+      />
+      <div
+        v-else
+        class="w-6 h-6 rounded-full bg-white/10 grid place-items-center text-xs"
+      >
+        {{ (f.username || "U").slice(0, 1).toUpperCase() }}
+      </div>
+      <span>{{ f.username || f.user_id.slice(0, 8) }}</span>
+    </RouterLink>
+    <!-- 👇 вот эта кнопка -->
+    <button class="mini-btn" @click="goChat(f.user_id)">Message</button>
+  </div>
+</div>
+
+          </div>
+
+          <!-- incoming -->
+          <div v-if="incoming.length">
+            <h4 class="text-sm text-white/60 mb-2">Incoming requests</h4>
+            <div class="flex flex-wrap gap-2">
+              <div v-for="f in incoming" :key="f.user_id" class="friend-pill">
+                <RouterLink
+                  :to="
+                    f.username
+                      ? `/u/${encodeURIComponent(f.username)}`
+                      : `/users`
+                  "
+                  class="flex items-center gap-2 shrink-0"
+                >
+                  <img
+                    v-if="f.avatar_url"
+                    :src="f.avatar_url"
+                    class="w-6 h-6 rounded-full object-cover"
+                  />
+                  <div
+                    v-else
+                    class="w-6 h-6 rounded-full bg-white/10 grid place-items-center text-xs"
+                  >
+                    {{ (f.username || "U").slice(0, 1).toUpperCase() }}
+                  </div>
+                  <span>{{ f.username || f.user_id.slice(0, 8) }}</span>
+                </RouterLink>
+                <button
+                  class="mini-btn"
+                  @click="acceptIncomingFriend(f.user_id)"
+                >
+                  Accept
+                </button>
+                <button class="mini-btn" @click="goChat(f.user_id)">Message</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- outgoing -->
+          <div v-if="outgoing.length">
+            <h4 class="text-sm text-white/60 mb-2">Outgoing requests</h4>
+            <div class="flex flex-wrap gap-2">
+              <div v-for="f in outgoing" :key="f.user_id" class="friend-pill">
+                <RouterLink
+                  :to="
+                    f.username
+                      ? `/u/${encodeURIComponent(f.username)}`
+                      : `/users`
+                  "
+                  class="flex items-center gap-2 shrink-0"
+                >
+                  <img
+                    v-if="f.avatar_url"
+                    :src="f.avatar_url"
+                    class="w-6 h-6 rounded-full object-cover"
+                  />
+                  <div
+                    v-else
+                    class="w-6 h-6 rounded-full bg-white/10 grid place-items-center text-xs"
+                  >
+                    {{ (f.username || "U").slice(0, 1).toUpperCase() }}
+                  </div>
+                  <span>{{ f.username || f.user_id.slice(0, 8) }}</span>
+                </RouterLink>
+                <!-- <button class="mini-btn" @click="goChat(f.user_id)">Message</button> -->
+                <button
+                  class="mini-btn"
+                  @click="cancelOutgoingFriend(f.user_id)"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="sep my-6"></div>
 
@@ -767,5 +980,32 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.9);
   border-color: rgba(255, 255, 255, 0.16);
+}
+
+.friend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9999px;
+  padding: 4px 10px 4px 4px;
+  font-size: 13px;
+}
+.mini-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  line-height: 1;
+}
+.link-pill {
+  text-decoration: none;
+  color: inherit;
+}
+.link-pill:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 </style>
