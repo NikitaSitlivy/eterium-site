@@ -7,7 +7,7 @@
     ></canvas>
 
     <!-- Весь контент поверх -->
-    <div class="relative z-10 bg-02">
+    <div class="relative z-10 bg-02 min-h100">
       <!-- Global Header -->
       <SiteHeader
         :isAuthed="isAuthed"
@@ -96,7 +96,27 @@
                     {{ pending ? (mode==='signin' ? 'Signing in…' : 'Creating…') : (mode==='signin' ? 'Sign in' : 'Create account') }}
                   </button>
                 </div>
+                <div class="flex items-center justify-between">
+                  <button
+                    v-if="mode==='signin'"
+                    type="button"
+                    class="text-sm text-white/70 hover:text-white underline underline-offset-2"
+                    @click="sendResetEmail"
+                    :disabled="pending"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <p v-if="submitError" class="text-red-400 text-sm">{{ submitError }}</p>
+                <p v-if="submitInfo" class="text-green-400 text-sm">{{ submitInfo }}</p>
+
+                <div class="pt-2">
+                  <div class="text-center text-xs uppercase tracking-wider text-white/50 mb-3">or continue with</div>
+                  <div class="grid grid-cols-1">
+                    <button type="button" class="glass-btn w-full" @click="oauth('google')" :disabled="pending">Google</button>
+                    <!-- <button type="button" class="glass-btn w-full" @click="oauth('apple')" :disabled="pending">Apple</button> -->
+                  </div>
+                </div>
               </form>
             </Transition>
           </div>
@@ -119,12 +139,15 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { initNebula, type NebulaHandle } from './lib/nebula'
 import SiteHeader from './components/SiteHeader.vue'
 import { useAuth } from './composables/useAuth'
 import UiPopup from './components/UiPopup.vue'
 import UiSpinner from './components/UiSpinner.vue'
 import { supabase } from './lib/superbase'
+
+const router = useRouter()
 
 const mouse = reactive({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
 function onMouse(e: MouseEvent) { mouse.x = e.clientX; mouse.y = e.clientY }
@@ -171,10 +194,26 @@ onMounted(() => {
   window.addEventListener('keydown', onKey)
   if (bgCanvas.value) nebula = initNebula(bgCanvas.value)
   nebula?.setMouseEnabled(false)
-  setOrbitFromScroll()
-  nebula?.setBoost(0)
-  tickBoost()
+
+  const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_IN') {
+      authOpen.value = false
+      // сюда можно добавить тост «Welcome back»
+      window.history.replaceState({}, '', window.location.pathname + window.location.search)
+      // перенаправим в аккаунт (или по своему роутингу)
+      if (window.location.pathname === '/' || window.location.pathname === '/login') {
+        window.location.assign('/account')
+      }
+    }
+    if (event === 'PASSWORD_RECOVERY') {
+      window.location.assign('/reset')
+    }
+  })
+
+  // если делаешь dispose:
+  onBeforeUnmount(() => { sub?.subscription.unsubscribe() })
 })
+
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(rafBoost)
@@ -194,6 +233,7 @@ const showPass = ref(false)
 const form = reactive({ email: '', password: '', confirm: '', username: '' })
 const errors = reactive<{ email?: string; password?: string; confirm?: string; username?: string }>({})
 const submitError = ref('')
+const submitInfo = ref('')
 const showVerifyPopup = ref(false)
 const pending = ref(false)
 
@@ -209,6 +249,7 @@ function openAuth(nextMode: Mode) {
   mode.value = nextMode
   authOpen.value = true
   submitError.value = ''
+  submitInfo.value = ''
   errors.email = errors.password = errors.confirm = errors.username = undefined
 }
 function closeAuth() { authOpen.value = false }
@@ -217,12 +258,12 @@ function validate(): boolean {
   errors.email = errors.password = errors.confirm = errors.username = undefined
   submitError.value = ''
   const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  const unameRx = /^[a-zA-Z0-9_]{3,20}$/
+  const unameRx = /^[a-zA-Z0-9_.-]{3,20}$/
   if (!form.email || !emailRx.test(form.email)) errors.email = 'Enter a valid email'
   if (!form.password || form.password.length < 8) errors.password = 'Min 8 characters'
   if (mode.value === 'signup') {
     if (!form.username) errors.username = 'Enter a username'
-    else if (!unameRx.test(form.username)) errors.username = '3–20 letters, digits or _'
+    else if (!unameRx.test(form.username)) errors.username = '3–20 letters, digits, _ . -'
     if (!form.confirm) errors.confirm = 'Confirm your password'
     if (!errors.password && form.confirm !== form.password) errors.confirm = 'Passwords do not match'
   }
@@ -232,6 +273,7 @@ function validate(): boolean {
 async function onSubmit() {
   if (!validate()) return
   submitError.value = ''
+  submitInfo.value = ''
   pending.value = true
   try {
     if (mode.value === 'signin') {
@@ -279,12 +321,54 @@ async function onSubmit() {
   }
 }
 
+async function sendResetEmail() {
+  submitError.value = ''
+  submitInfo.value = ''
+  if (!form.email) {
+    errors.email = 'Enter your email to reset'
+    return
+  }
+  try {
+    pending.value = true
+    const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
+      redirectTo: `${window.location.origin}/reset`
+    } as any)
+    if (error) throw error
+    submitInfo.value = 'We\'ve sent a reset link to your email.'
+  } catch (e: any) {
+    submitError.value = e?.message ?? 'Failed to send reset email'
+  } finally {
+    pending.value = false
+  }
+}
+
+async function oauth(provider: 'google' ) {
+  submitError.value = ''
+  submitInfo.value = ''
+  try {
+    pending.value = true
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin }
+    })
+    if (error) throw error
+    // Browser navigates to provider; no further action here
+  } catch (e: any) {
+    submitError.value = e?.message ?? 'OAuth error'
+  } finally {
+    pending.value = false
+  }
+}
+
 async function logout() {
   try {
     pending.value = true
     await signOut()
+    router.push('/')
   } finally {
     pending.value = false
   }
 }
 </script>
+
+

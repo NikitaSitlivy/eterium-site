@@ -258,6 +258,7 @@ a.cta {
   padding: 8px 12px;
 }
 
+
 /* Яркая «голова» кометы — тонкий пробегающий штрих */
 .glass-btn.comet::after {
   content: "";
@@ -449,4 +450,221 @@ a.cta {
     transform: none;
     filter: none;
   }
+}
+
+/* glass-card + glass-panel (совместимы с хиро-страницей) */
+.glass-card {
+  position: relative;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(to bottom, rgba(255,255,255,0.28), rgba(255,255,255,0.04)) border-box,
+    radial-gradient(120% 180% at 50% -20%, rgba(255,255,255,0.38), rgba(255,255,255,0) 55%) padding-box,
+    linear-gradient(180deg, rgba(24,26,34,0.55), rgba(24,26,34,0.35) 45%, rgba(10,10,12,0.55) 100%) padding-box;
+  backdrop-filter: blur(18px) saturate(1.35) contrast(1.05);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35) contrast(1.05);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255,255,255,0.45),
+    inset 0 -1px 0 rgba(0,0,0,0.35),
+    0 24px 80px rgba(0,0,0,0.55),
+    0 8px 28px rgba(0,0,0,0.40);
+  color: rgba(255,255,255,0.92);
+}
+.glass-card::before{
+  content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0) 42%) top/100% 60% no-repeat,
+    radial-gradient(70% 40% at 80% -10%, rgba(120,210,255,0.35), rgba(120,210,255,0) 60%);
+  mix-blend-mode: screen; opacity:.85;
+}
+.glass-card::after{
+  content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+  background:
+    radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,0.28), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.012) 0 2px, rgba(255,255,255,0) 2px 4px);
+  opacity:.22;
+}
+/* панель без дополнительных слоёв поверх — как у кнопок/pill */
+.glass-panel{
+  border: 1px solid rgba(255,255,255,.15);
+  background:
+    radial-gradient(120% 80% at 15% -10%, rgba(165,120,255,0.26) 0%, rgba(165,120,255,0) 46%),
+    linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.28),
+    0 10px 30px rgba(0,0,0,0.45),
+    0 2px 8px rgba(0,0,0,0.35);
+  border-radius: 1.25rem;
+}
+.glass-panel::before, .glass-panel::after { content:none !important; }
+.glass-card:hover{
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,0.22);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255,255,255,0.55),
+    inset 0 -1px 0 rgba(0,0,0,0.4),
+    0 28px 90px rgba(0,0,0,0.6),
+    0 10px 32px rgba(0,0,0,0.45);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+@media (prefers-reduced-motion: reduce){
+  .glass-card, .glass-card:hover { transition:none; transform:none; }
+}
+
+main{
+  margin-top: 70px !important;
+}
+.min-h100{
+  min-height: 100vh;
+}
+.glass-btn.comet {
+
+    border-color: rgba(97, 225, 255, .35) !important;
+    color: rgba(255, 255, 255, .9) !important;
+    background: rgb(16,16,19,.6)!important;
+    box-shadow: inset 0 .5px 0 rgba(255, 255, 255, .35), 0 3px 12px rgba(97, 225, 255, .12) !important;
+
+
+
+}
+
+/* ===== Notifications ===== */
+.notif-root {
+  position: relative;
+}
+.notif-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.notif-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.notif-dot {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  background: #8effb2;
+  color: #0a0f0a;
+  border-radius: 9999px;
+  font-size: 11px;
+  padding: 1px 4px;
+  font-weight: 600;
+}
+
+.notif-panel {
+  position: absolute;
+  right: 0;
+  margin-top: 0.5rem;
+width: 340px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(18, 20, 26, 0.96) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  padding: 0.5rem 0;
+  z-index: 50;
+}
+.notif-head,
+.notif-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+}
+.notif-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.notif-item {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+
+  gap: 8px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+display: grid;
+grid-template-columns: 120px 1fr;
+}
+.notif-item.unread {
+  background: rgba(160, 200, 255, 0.08);
+}
+.notif-type {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: rgba(160, 200, 255, 0.85);
+}
+.notif-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.notif-time {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.notif-empty {
+  text-align: center;
+  padding: 12px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.notif-footer {
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content: center;
+  cursor: pointer;
+}
+.notif-footer:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.usermenu-root{
+display: flex;
+flex-direction: row-reverse;
+gap: 6px;
+}
+
+/* ===== Global Scrollbar Styling ===== */
+:root{
+  --eter-scroll-thumb: rgba(165,120,255,0.85); /* site accent purple */
+  --eter-scroll-thumb-hover: rgba(165,120,255,0.95);
+  --eter-scroll-track: #000; /* black track */
+}
+
+/* Firefox */
+html, body, * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--eter-scroll-thumb) var(--eter-scroll-track);
+}
+
+/* Chromium/WebKit */
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--eter-scroll-track);
+}
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--eter-scroll-thumb), rgba(165,120,255,0.65));
+  border-radius: 10px;
+  border: 2px solid var(--eter-scroll-track);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--eter-scroll-thumb-hover);
+}
+*::-webkit-scrollbar-corner {
+  background: var(--eter-scroll-track);
 }
