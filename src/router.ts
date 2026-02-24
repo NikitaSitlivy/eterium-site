@@ -30,7 +30,7 @@ export const router = createRouter({
     { path: '/login', component: Login },
     { path: '/reset', component: Reset },
     { path: '/account', component: Account, meta: { auth: true } },
-    { path: '/profile', component: Profile, meta: { auth: true } },   
+    { path: '/profile', redirect: '/account' },   
      { path: '/messages', component: Messages, meta: { auth: true } },   
     { path: '/u/:username', component: PublicProfile },     
       { path: '/inventory', name: 'inventory', component: InventoryPage },             

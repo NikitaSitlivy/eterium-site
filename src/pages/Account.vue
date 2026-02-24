@@ -14,13 +14,15 @@ const router = useRouter();
 const { user, isAuthed, signOut } = useAuth();
 
 /* ------------ state ------------ */
-const profile = reactive<{ username: string; avatar_url: string | null }>({
+const profile = reactive<{ username: string; avatar_url: string | null; bio: string | null }>({
   username: "",
   avatar_url: null,
+  bio: null,
 });
-const form = reactive<{ username: string; avatar_url: string | null }>({
+const form = reactive<{ username: string; avatar_url: string | null; bio: string }>({
   username: "",
   avatar_url: null,
+  bio: "",
 });
 
 const pageLoading = ref(true);
@@ -42,6 +44,25 @@ type AchRow = {
 };
 const achLoading = ref(false);
 const achRows = ref<AchRow[]>([]);
+type InvRow = {
+  item_id: string;
+  name: string;
+  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary" | string;
+  icon_url: string | null;
+  acquired_at: string;
+};
+const invLoading = ref(false);
+const invRows = ref<InvRow[]>([]);
+const invItems = computed(() =>
+  invRows.value.map((r) => ({
+    key: `${r.item_id}-${r.acquired_at}`,
+    id: r.item_id,
+    name: r.name,
+    rarity: r.rarity,
+    icon_url: r.icon_url,
+    acquired_at: r.acquired_at,
+  }))
+);
 
 function rarityClass(r: string) {
   if (r === "legendary")
@@ -204,6 +225,73 @@ const avatarSrc = computed<string | null>(() => {
   return data.publicUrl || null;
 });
 
+const publicProfileUrl = computed(() => {
+  if (!profile.username) return "";
+  const path = `/u/${encodeURIComponent(profile.username)}`;
+  return typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+});
+const highlights = computed(() => [
+  { label: "Friends", value: String(friends.value.length) },
+  { label: "Incoming", value: String(incoming.value.length) },
+  { label: "Outgoing", value: String(outgoing.value.length) },
+  { label: "Achievements", value: String(achRows.value.length) },
+  { label: "Inventory", value: String(invItems.value.length) },
+  { label: "Public profile", value: publicProfileUrl.value ? "Ready" : "No username" },
+]);
+
+const joinedAt = computed<string | null>(() => {
+  const created = (user.value as any)?.created_at;
+  if (!created) return null;
+  const d = new Date(created);
+  if (Number.isNaN(d.getTime())) return null;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+});
+
+const copiedId = ref(false);
+async function copyMyId() {
+  const id = user.value?.id;
+  if (!id) return;
+  try {
+    await navigator.clipboard.writeText(id);
+    copiedId.value = true;
+    setTimeout(() => (copiedId.value = false), 1200);
+  } catch {}
+}
+
+async function loadInventoryByUser(userId: string) {
+  invLoading.value = true;
+  try {
+    const { data, error } = await supabase
+      .from("inventory")
+      .select("acquired_at, item_id, items(name, rarity, icon_url)")
+      .eq("user_id", userId)
+      .order("acquired_at", { ascending: false })
+      .limit(8);
+    if (error) throw error;
+
+    invRows.value = (data ?? [])
+      .map((row: any) => {
+        const item = Array.isArray(row.items) ? row.items[0] : row.items;
+        if (!item) return null;
+        return {
+          item_id: row.item_id,
+          name: item.name ?? "Unknown item",
+          rarity: item.rarity ?? "common",
+          icon_url: item.icon_url ?? null,
+          acquired_at: row.acquired_at,
+        } as InvRow;
+      })
+      .filter(Boolean) as InvRow[];
+  } catch {
+    invRows.value = [];
+  } finally {
+    invLoading.value = false;
+  }
+}
+
 /* ------------ helpers: avatars ------------ */
 function extractAvatarPath(
   publicUrl: string | null | undefined
@@ -227,7 +315,7 @@ async function loadProfile(userId: string) {
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("username, avatar_url")
+      .select("username, avatar_url, bio")
       .eq("id", userId)
       .maybeSingle();
     if (error) throw error;
@@ -241,6 +329,8 @@ async function loadProfile(userId: string) {
     }
     form.username = profile.username;
     form.avatar_url = profile.avatar_url;
+    profile.bio = (data?.bio as string | null) ?? null;
+    form.bio = profile.bio ?? "";
   } catch (e: any) {
     const m = e?.message ?? "Failed to load profile";
     err.value = m;
@@ -275,11 +365,13 @@ async function saveProfile() {
       id: currentId,
       username: uname,
       avatar_url: form.avatar_url ?? null,
+      bio: form.bio.trim() || null,
     });
     if (upErr) throw upErr;
 
     profile.username = uname;
     profile.avatar_url = form.avatar_url;
+    profile.bio = form.bio.trim() || null;
     msg.value = "Profile updated";
 
     window.dispatchEvent(
@@ -289,6 +381,7 @@ async function saveProfile() {
     );
 
     await loadAchievementsByUser(currentId);
+    await loadInventoryByUser(currentId);
     await loadFriends(currentId);
   } catch (e: any) {
     const m = e?.message ?? "Failed to update profile";
@@ -428,6 +521,7 @@ onMounted(async () => {
     if (!uid) return;
     await loadProfile(uid);
     await loadAchievementsByUser(uid);
+    await loadInventoryByUser(uid);
     await loadFriends(uid);
   } finally {
     pageLoading.value = false;
@@ -496,6 +590,38 @@ onMounted(async () => {
                 .slice(0, 1)
                 .toUpperCase()
             }}
+          </div>
+
+          <div class="w-full account-meta">
+            <div class="meta-row">
+              <div class="meta-key">ID</div>
+              <div class="meta-val">
+                <span class="mono">{{ user?.id || "—" }}</span>
+                <button type="button" class="copy-btn" :disabled="!user?.id" @click="copyMyId" title="Copy ID">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M8 8h12v12H8z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M4 4h12v12H4z" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="meta-row">
+              <div class="meta-key">Joined</div>
+              <div class="meta-val">{{ joinedAt || "—" }}</div>
+            </div>
+
+            <div class="meta-row">
+              <div class="meta-key">Public</div>
+              <div class="meta-val">
+                <a v-if="publicProfileUrl" :href="publicProfileUrl" target="_blank" rel="noopener" class="meta-link">
+                  {{ publicProfileUrl }}
+                </a>
+                <span v-else class="text-white/40">Set username first</span>
+              </div>
+            </div>
+
+            <p v-if="copiedId" class="text-[11px] text-green-300/90 mt-2 text-right">ID copied</p>
           </div>
 
           <button
@@ -570,6 +696,29 @@ onMounted(async () => {
               3–20 letters, digits or underscore. Unique.
             </p>
           </div>
+
+          <div>
+            <label class="block text-sm mb-1">Bio</label>
+            <textarea
+              v-model.trim="form.bio"
+              rows="3"
+              placeholder="Tell something about yourself"
+              class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-eter-accent resize-y"
+            />
+            <p class="text-xs text-white/50 mt-1">Shown on your public profile</p>
+          </div>
+
+          <div v-if="publicProfileUrl">
+            <label class="block text-sm mb-1">Public profile link</label>
+            <a
+              :href="publicProfileUrl"
+              target="_blank"
+              rel="noopener"
+              class="block w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white/80 underline underline-offset-2 break-all"
+            >
+              {{ publicProfileUrl }}
+            </a>
+          </div>
         </div>
         <div class="sep my-6"></div>
         <h3 class="text-base font-semibold mb-3">Avatar</h3>
@@ -587,18 +736,46 @@ onMounted(async () => {
             class="nav-cta"
             v-if="
               form.username !== profile.username ||
-              form.avatar_url !== profile.avatar_url
+              form.avatar_url !== profile.avatar_url ||
+              form.bio !== (profile.bio || '')
             "
             @click="
               form.username = profile.username;
               form.avatar_url = profile.avatar_url;
+              form.bio = profile.bio || '';
             "
           >
             Cancel
           </button>
         </div>
-        <!-- ===== FRIENDS SECTION ===== -->
         <div class="sep my-6"></div>
+        <h3 class="text-base font-semibold mb-3">Highlights</h3>
+        <div class="hl-grid mb-6">
+          <div v-for="h in highlights" :key="h.label" class="hl-card">
+            <div class="hl-label">{{ h.label }}</div>
+            <div class="hl-value">{{ h.value }}</div>
+          </div>
+        </div>
+
+        <div class="mini-card mb-6">
+          <div class="mini-title-row">
+            <h4 class="mini-title m-0">Inventory</h4>
+            <RouterLink to="/inventory" class="mini-link">View all</RouterLink>
+          </div>
+          <div v-if="invLoading && invItems.length === 0" class="text-white/60 text-sm">Loading inventory…</div>
+          <div v-else-if="invItems.length === 0" class="text-white/50 text-sm">No items yet.</div>
+          <div v-else class="inv-grid-mini">
+            <div v-for="it in invItems.slice(0, 6)" :key="it.key" class="inv-tile-mini">
+              <div class="inv-mini-imgwrap">
+                <img v-if="it.icon_url" :src="it.icon_url" :alt="it.name" class="inv-mini-img" loading="lazy" />
+                <div v-else class="inv-mini-ph">?</div>
+              </div>
+              <div class="inv-mini-name" :title="it.name">{{ it.name }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== FRIENDS SECTION ===== -->
         <h3 class="text-base font-semibold mb-3">Friends</h3>
         <div v-if="friendsLoading" class="text-white/60 text-sm">
           Loading friends…
@@ -846,6 +1023,148 @@ onMounted(async () => {
 }
 .card-fc {
   height: fit-content;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.account-meta {
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.hl-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (min-width: 768px) {
+  .hl-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.hl-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.hl-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.hl-value {
+  margin-top: 4px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.mini-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.mini-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.mini-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+.mini-link {
+  font-size: 12px;
+  color: #cfe0ff;
+  text-decoration: underline dotted;
+}
+.inv-grid-mini {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (min-width: 768px) {
+  .inv-grid-mini {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.inv-tile-mini {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.inv-mini-imgwrap {
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.inv-mini-img {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+}
+.inv-mini-ph {
+  color: rgba(255, 255, 255, 0.45);
+}
+.inv-mini-name {
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.meta-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.meta-row:first-child {
+  border-top: 0;
+}
+.meta-key {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+.meta-val {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: right;
+}
+.meta-link {
+  color: #cfe0ff;
+  text-decoration: underline dotted;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.copy-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.copy-btn:disabled {
+  opacity: 0.5;
 }
 
 /* === Achievements grid (flex, без position) === */

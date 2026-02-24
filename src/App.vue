@@ -140,12 +140,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { initNebula, type NebulaHandle } from './lib/nebula'
 import SiteHeader from './components/SiteHeader.vue'
 import { useAuth } from './composables/useAuth'
 import UiPopup from './components/UiPopup.vue'
 import UiSpinner from './components/UiSpinner.vue'
 import { supabase } from './lib/superbase'
+import type { NebulaHandle } from './lib/nebula'
 
 const router = useRouter()
 
@@ -186,36 +186,52 @@ function tickBoost() {
 
 const bgCanvas = ref<HTMLCanvasElement | null>(null)
 let nebula: NebulaHandle | null = null
+let nebulaLoadCancelled = false
+let authStateSub: { unsubscribe: () => void } | null = null
+
+function runWhenIdle(cb: () => void) {
+  const ric = (window as Window & {
+    requestIdleCallback?: (callback: () => void) => number
+  }).requestIdleCallback
+  if (ric) {
+    ric(cb)
+    return
+  }
+  window.setTimeout(cb, 120)
+}
+
+async function initNebulaLazy() {
+  if (!bgCanvas.value || nebulaLoadCancelled || nebula) return
+  const { initNebula } = await import('./lib/nebula')
+  if (!bgCanvas.value || nebulaLoadCancelled || nebula) return
+  nebula = initNebula(bgCanvas.value)
+  nebula?.setMouseEnabled(false)
+}
+
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') closeAuth()
 }
 onMounted(() => {
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('keydown', onKey)
-  if (bgCanvas.value) nebula = initNebula(bgCanvas.value)
-  nebula?.setMouseEnabled(false)
+  runWhenIdle(() => { void initNebulaLazy() })
 
   const { data: sub } = supabase.auth.onAuthStateChange((event) => {
     if (event === 'SIGNED_IN') {
       authOpen.value = false
       // сюда можно добавить тост «Welcome back»
-      window.history.replaceState({}, '', window.location.pathname + window.location.search)
-      // перенаправим в аккаунт (или по своему роутингу)
-      if (window.location.pathname === '/' || window.location.pathname === '/login') {
-        window.location.assign('/account')
-      }
     }
     if (event === 'PASSWORD_RECOVERY') {
       window.location.assign('/reset')
     }
   })
-
-  // если делаешь dispose:
-  onBeforeUnmount(() => { sub?.subscription.unsubscribe() })
+  authStateSub = sub?.subscription ?? null
 })
 
 
 onBeforeUnmount(() => {
+  nebulaLoadCancelled = true
+  authStateSub?.unsubscribe()
   cancelAnimationFrame(rafBoost)
   window.removeEventListener('mousemove', onMouse)
   window.removeEventListener('touchmove', onTouch)
@@ -279,6 +295,7 @@ async function onSubmit() {
     if (mode.value === 'signin') {
       await signIn(form.email, form.password)
       authOpen.value = false
+      router.push('/account')
       return
     }
 
@@ -314,6 +331,7 @@ async function onSubmit() {
     }
 
     authOpen.value = false
+    router.push('/account')
   } catch (e: any) {
     submitError.value = e?.message ?? 'Auth error'
   } finally {

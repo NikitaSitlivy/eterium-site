@@ -26,9 +26,6 @@
         <RouterLink v-if="isAuthed" v-slot="{ isActive }" to="/account">
           <span :class="linkClass(isActive)">Account</span>
         </RouterLink>
-        <RouterLink v-if="isAuthed" v-slot="{ isActive }" :to="profileUrl">
-          <span :class="linkClass(isActive)">Profile</span>
-        </RouterLink>
       </nav>
 
       <div class="hidden md:flex items-center gap-2">
@@ -90,11 +87,6 @@
               <span>Account</span>
             </RouterLink>
 
-            <RouterLink class="user-item" :to="profileUrl" @click="userMenu = false">
-              <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M19 21a7 7 0 0 0-14 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-              <span>Profile</span>
-            </RouterLink>
-
             <RouterLink class="user-item" to="/inventory" @click="userMenu = false">
               <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-6 9 6v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.5"/><path d="M3 9h18M9 22V9m6 13V9" stroke="currentColor" stroke-width="1.5"/></svg></span>
               <span>Inventory</span>
@@ -152,9 +144,6 @@
   </span>
 </RouterLink>
 <RouterLink v-if="isAuthed" class="drawer-link" to="/account" @click="open = false">Account</RouterLink>
-<RouterLink v-if="isAuthed" class="drawer-link" :to="profileUrl" @click="open = false">Profile</RouterLink>
-
-
           <div class="mt-3 grid grid-cols-2 gap-2">
             <button v-if="!isAuthed" type="button" class="nav-cta" @click.stop.prevent="$emit('signin'); open = false;">Sign in</button>
             <button v-if="!isAuthed" type="button" class="nav-cta nav-cta--accent" @click.stop.prevent="$emit('signup'); open = false;">Sign up</button>

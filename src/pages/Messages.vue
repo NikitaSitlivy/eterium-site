@@ -1,6 +1,6 @@
 <!-- pages/Messages.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '../lib/superbase'
 import { useAuth } from '../composables/useAuth'
@@ -46,18 +46,16 @@ const err = ref<string | null>(null)
 const subs: Array<ReturnType<typeof supabase.channel>> = []
 const pendingDirect = ref(false)
 
+function appendMessageUnique(next: MessageRow) {
+  if (messages.value.some(m => m.id === next.id)) return
+  messages.value = [...messages.value, next]
+}
+
 /**
- * ===== SIMPLE E2E DEMO =====
- * На каждый conversation_id – свой ключ.
- * Ключ лежит только в localStorage.
+ * ===== LEGACY DECRYPT SUPPORT =====
+ * Поддерживаем чтение старых et1:-сообщений, которые были зашифрованы локальным demo-ключом.
  */
 const LS_PREFIX = 'eterium_conv_key_'
-
-function getLocalKey(convId: string): CryptoKey | null {
-  // мы не можем хранить CryptoKey прямо в LS, поэтому положим base64, но для демо проще —
-  // мы будем хранить сырой 32-байтовый ключ в LS и из него собирать CryptoKey
-  return null
-}
 
 async function ensureConvKey(convId: string): Promise<CryptoKey> {
   const lsKey = localStorage.getItem(LS_PREFIX + convId)
@@ -83,33 +81,12 @@ async function ensureConvKey(convId: string): Promise<CryptoKey> {
   return key
 }
 
-function bufToB64(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf)
-  let str = ''
-  bytes.forEach(b => { str += String.fromCharCode(b) })
-  return btoa(str)
-}
 function b64ToBuf(b64: string): ArrayBuffer {
   const bin = atob(b64)
   const len = bin.length
   const bytes = new Uint8Array(len)
   for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i)
   return bytes.buffer
-}
-
-/**
- * Шифруем текст → строка вида: et1:<iv_b64>:<cipher_b64>
- */
-async function encryptText(convId: string, plain: string): Promise<string> {
-  const key = await ensureConvKey(convId)
-  const iv = crypto.getRandomValues(new Uint8Array(12))
-  const enc = new TextEncoder().encode(plain)
-  const cipher = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    enc
-  )
-  return `et1:${bufToB64(iv.buffer)}:${bufToB64(cipher)}`
 }
 
 /**
@@ -286,8 +263,7 @@ async function loadAllLeft() {
 
     if (!currentConvId.value && convList[0]) {
       currentConvId.value = convList[0].id
-      await loadMessages(convList[0].id!)
-      subscribeToConversation(convList[0].id!)
+      // Дальше сработает watch(currentConvId)
     }
   } catch (e: any) {
     err.value = e?.message ?? 'Failed to load messages'
@@ -345,7 +321,7 @@ function subscribeToConversation(convId: string) {
         const conv = conversations.value.find(c => c.id === convId)
         const otherUserId = conv?.other_user_id
         const decryptedText = await decryptText(convId, newMsg, otherUserId)
-        messages.value = [...messages.value, { ...newMsg, body: decryptedText }]
+        appendMessageUnique({ ...newMsg, body: decryptedText })
         await loadAllLeft()
       }
     )
@@ -369,15 +345,14 @@ async function sendMessage() {
   const convId = currentConvId.value
   const plain = text.value.trim()
   try {
-    // шифруем ПЕРЕД отправкой
-    const encrypted = await encryptText(convId, plain)
-
     const { data, error } = await supabase
       .from('messages')
       .insert({
         conversation_id: convId,
         sender_id: myId.value,
-        body: encrypted
+        // Локальное "E2E" из localStorage несовместимо между устройствами/пользователями.
+        // Для корректной переписки отправляем обычный текст, а decryptText оставляем для старых сообщений.
+        body: plain
       })
       .select()
       .single()
@@ -386,10 +361,7 @@ async function sendMessage() {
       text.value = ''
       // сразу расшифруем, чтобы не ждать realtime
       const decrypted = await decryptText(convId, data)
-      messages.value = [
-        ...messages.value,
-        { ...data, body: decrypted }
-      ]
+      appendMessageUnique({ ...data, body: decrypted })
       await loadAllLeft()
     }
   } finally {
@@ -449,10 +421,15 @@ onMounted(async () => {
     const convId = await startDirectWith(to)
     if (convId) {
       currentConvId.value = convId
-      await loadMessages(convId)
-      subscribeToConversation(convId)
+      // Дальше сработает watch(currentConvId)
     }
     pendingDirect.value = false
+  }
+})
+
+onBeforeUnmount(() => {
+  while (subs.length) {
+    subs.pop()?.unsubscribe()
   }
 })
 </script>

@@ -16,7 +16,7 @@ function toggle(){ emit('update:modelValue', !props.modelValue) }
       </div>
 
       <!-- pretty switch -->
-      <button type="button" class="ar-switch" :class="{ on: modelValue }" @click="toggle" aria-pressed="modelValue">
+      <button type="button" class="ar-switch" :class="{ on: modelValue }" @click="toggle" :aria-pressed="modelValue">
         <span class="knob" />
       </button>
     </div>

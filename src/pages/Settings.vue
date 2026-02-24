@@ -24,8 +24,12 @@ onMounted(async () => {
   email.value = data.user?.email ?? ''
   // Заглушка: позже prefs можно грузить из user_metadata
   const user = data.user
-  prefs.systemNotifs = !!user?.user_metadata?.system_notifs ?? true
-  prefs.emailNotifs = !!user?.user_metadata?.email_notifs ?? false
+  prefs.systemNotifs = user?.user_metadata?.system_notifs !== undefined
+    ? Boolean(user.user_metadata.system_notifs)
+    : true
+  prefs.emailNotifs = user?.user_metadata?.email_notifs !== undefined
+    ? Boolean(user.user_metadata.email_notifs)
+    : false
 })
 
 async function resendVerification() {
@@ -93,12 +97,13 @@ async function deleteAccount() {
     const uid = data.user?.id
     if (!uid) throw new Error('Not signed in')
     // Удаляем профиль и пользователя
-    await supabase.from('profiles').delete().eq('id', uid)
+    const { error: profileDeleteError } = await supabase.from('profiles').delete().eq('id', uid)
+    if (profileDeleteError) throw profileDeleteError
     await supabase.auth.signOut()
-    msg.value = 'Account deleted.'
+    msg.value = 'Profile data deleted. Account session signed out.'
     window.location.assign('/')
   } catch (e: any) {
-    err.value = e?.message || 'Failed to delete account'
+    err.value = e?.message || 'Failed to delete profile data'
   } finally {
     deleting.value = false
     confirmDelete.value = false
@@ -147,10 +152,10 @@ async function deleteAccount() {
       <section class="glass-card glass-panel p-6 md:col-span-2">
         <h2 class="font-semibold mb-3 text-red-300">Danger zone</h2>
         <p class="text-sm text-white/70">
-          Deleting your account is irreversible. All your data, friends and progress will be lost.
+          This action deletes your profile record and signs you out. Full auth account deletion requires a server-side admin action.
         </p>
         <button class="glass-btn comet mt-3 danger" @click="confirmDelete = true">
-          Delete account
+          Delete profile data
         </button>
       </section>
     </div>
@@ -161,8 +166,8 @@ async function deleteAccount() {
     <UiPopup
       :open="confirmDelete"
       title="Confirm deletion"
-      message="Are you sure you want to permanently delete your account?"
-      button-label="Delete"
+      message="Delete your profile data and sign out on this device?"
+      button-label="Delete profile"
       variant="danger"
       @close="confirmDelete = false"
       @confirm="deleteAccount"

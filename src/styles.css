@@ -309,7 +309,7 @@ a.cta {
 .glass-btn.comet:focus-visible::after,
 .glass-btn.comet:focus-visible::before,
 .glass-btn.comet-active::after,
-.glass-btn.comet-active::before,comet-active {
+.glass-btn.comet-active::before {
   opacity: 1;
   animation: comet-rotate 1500ms linear infinite;
 }
@@ -318,8 +318,7 @@ a.cta {
 .glass-btn.comet:active::after,
 .glass-btn.comet:active::before,
 .glass-btn.comet-active:active::after,
-.glass-btn.comet-active:active::before,
-{
+.glass-btn.comet-active:active::before {
   animation-duration: 900ms;
 }
 
