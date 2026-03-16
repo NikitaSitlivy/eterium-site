@@ -1,15 +1,12 @@
 <!-- pages/Messages.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '../lib/superbase'
 import { useAuth } from '../composables/useAuth'
 
-/**
- * ===== TYPES =====
- */
 type Conversation = {
-  id: string | null        // null = друга пока нет чата
+  id: string | null
   other_user_id: string
   other_username: string | null
   other_avatar_url: string | null
@@ -26,16 +23,10 @@ type MessageRow = {
   created_at: string
 }
 
-/**
- * ===== AUTH / ROUTE =====
- */
 const route = useRoute()
 const { user } = useAuth()
 const myId = computed(() => user.value?.id ?? null)
 
-/**
- * ===== STATE =====
- */
 const loading = ref(true)
 const conversations = ref<Conversation[]>([])
 const currentConvId = ref<string | null>(null)
@@ -46,35 +37,68 @@ const err = ref<string | null>(null)
 const subs: Array<ReturnType<typeof supabase.channel>> = []
 const pendingDirect = ref(false)
 
+const messageViewport = ref<HTMLElement | null>(null)
+const loadingOlder = ref(false)
+const hasMoreOlder = ref(true)
+const oldestLoadedAt = ref<string | null>(null)
+
+const viewportScrollTop = ref(0)
+const viewportHeight = ref(0)
+
+const PAGE_SIZE = 50
+const ESTIMATED_ROW_HEIGHT = 76
+const OVERSCAN = 8
+
+const virtualStart = computed(() =>
+  Math.max(0, Math.floor(viewportScrollTop.value / ESTIMATED_ROW_HEIGHT) - OVERSCAN)
+)
+const virtualEnd = computed(() =>
+  Math.min(
+    messages.value.length,
+    Math.ceil((viewportScrollTop.value + viewportHeight.value) / ESTIMATED_ROW_HEIGHT) + OVERSCAN
+  )
+)
+const visibleMessages = computed(() => messages.value.slice(virtualStart.value, virtualEnd.value))
+const topSpacerHeight = computed(() => virtualStart.value * ESTIMATED_ROW_HEIGHT)
+const bottomSpacerHeight = computed(() =>
+  Math.max(0, (messages.value.length - virtualEnd.value) * ESTIMATED_ROW_HEIGHT)
+)
+
 function appendMessageUnique(next: MessageRow) {
   if (messages.value.some(m => m.id === next.id)) return
   messages.value = [...messages.value, next]
 }
 
-/**
- * ===== LEGACY DECRYPT SUPPORT =====
- * Поддерживаем чтение старых et1:-сообщений, которые были зашифрованы локальным demo-ключом.
- */
+function syncViewportMetrics() {
+  const el = messageViewport.value
+  if (!el) return
+  viewportHeight.value = el.clientHeight
+  viewportScrollTop.value = el.scrollTop
+}
+
+function isNearBottom() {
+  const el = messageViewport.value
+  if (!el) return true
+  return el.scrollHeight - (el.scrollTop + el.clientHeight) < 96
+}
+
+async function scrollToBottom() {
+  await nextTick()
+  const el = messageViewport.value
+  if (!el) return
+  el.scrollTop = el.scrollHeight
+  viewportScrollTop.value = el.scrollTop
+}
+
 const LS_PREFIX = 'eterium_conv_key_'
 
 async function ensureConvKey(convId: string): Promise<CryptoKey> {
   const lsKey = localStorage.getItem(LS_PREFIX + convId)
   if (lsKey) {
     const raw = Uint8Array.from(atob(lsKey), c => c.charCodeAt(0))
-    return await crypto.subtle.importKey(
-      'raw',
-      raw,
-      { name: 'AES-GCM' },
-      false,
-      ['encrypt', 'decrypt']
-    )
+    return await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt'])
   }
-  // генерим новый
-  const key = await crypto.subtle.generateKey(
-    { name: 'AES-GCM', length: 256 },
-    true,
-    ['encrypt', 'decrypt']
-  )
+  const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt'])
   const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key))
   const b64 = btoa(String.fromCharCode(...raw))
   localStorage.setItem(LS_PREFIX + convId, b64)
@@ -89,42 +113,30 @@ function b64ToBuf(b64: string): ArrayBuffer {
   return bytes.buffer
 }
 
-/**
- * Дешифруем, если это наш формат, иначе отдаём как есть
- */
-async function decryptText(convId: string, row: { body: string | null }, otherUserId?: string | null): Promise<string> {
+async function decryptText(convId: string, row: { body: string | null }): Promise<string> {
   const body = row.body || ''
-  if (!body.startsWith('et1:')) {
-    // старые либо тестовые
-    return body
-  }
+  if (!body.startsWith('et1:')) return body
   try {
     const [, ivB64, cB64] = body.split(':')
     const iv = new Uint8Array(b64ToBuf(ivB64))
     const cipher = b64ToBuf(cB64)
     const key = await ensureConvKey(convId)
-    const plainBuf = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      cipher
-    )
+    const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher)
     return new TextDecoder().decode(plainBuf)
-  } catch (e) {
-    console.warn('decrypt failed', e)
+  } catch {
     return '[encrypted]'
   }
 }
 
-/**
- * ===== 1. ЗАГРУЗКА ЧАТОВ =====
- */
 async function loadConversationsOnly(): Promise<Conversation[]> {
   if (!myId.value) return []
+
   const { data: memberRows, error: mErr } = await supabase
     .from('conversation_members')
     .select('conversation_id')
     .eq('user_id', myId.value)
   if (mErr) throw mErr
+
   const convIds = (memberRows ?? []).map(r => r.conversation_id)
   if (convIds.length === 0) return []
 
@@ -138,12 +150,11 @@ async function loadConversationsOnly(): Promise<Conversation[]> {
   for (const m of allMembers ?? []) {
     if (m.user_id !== myId.value) otherIds.add(m.user_id)
   }
-  const othersArr = Array.from(otherIds)
 
   const { data: profs } = await supabase
     .from('profiles')
     .select('id, username, avatar_url')
-    .in('id', othersArr.length ? othersArr : ['00000000-0000-0000-0000-000000000000'])
+    .in('id', Array.from(otherIds).length ? Array.from(otherIds) : ['00000000-0000-0000-0000-000000000000'])
 
   const profMap = new Map<string, { username: string | null; avatar_url: string | null }>()
   ;(profs ?? []).forEach(p => {
@@ -155,13 +166,12 @@ async function loadConversationsOnly(): Promise<Conversation[]> {
     profMap.set(p.id, { username: p.username, avatar_url: av })
   })
 
-  // последние сообщения
   const { data: lastMsgs } = await supabase
     .from('messages')
-    .select('id, conversation_id, body, created_at')
+    .select('conversation_id, body, created_at')
     .in('conversation_id', convIds)
     .order('created_at', { ascending: false })
-    .limit(1000)
+    .limit(200)
 
   const lastByConv = new Map<string, { body: string | null; created_at: string }>()
   for (const m of lastMsgs ?? []) {
@@ -175,13 +185,11 @@ async function loadConversationsOnly(): Promise<Conversation[]> {
     const membersOfConv = (allMembers ?? []).filter(m => m.conversation_id === cid)
     const other = membersOfConv.find(m => m.user_id !== myId.value)
     if (!other) continue
-    const prof = profMap.get(other.user_id) || null
-    const last = lastByConv.get(cid) || null
-    // расшифровать превью (если не получится — покажем как есть)
+
+    const prof = profMap.get(other.user_id)
+    const last = lastByConv.get(cid)
     let preview = last?.body ?? null
-    if (preview) {
-      preview = await decryptText(cid, { body: preview })
-    }
+    if (preview) preview = await decryptText(cid, { body: preview })
 
     list.push({
       id: cid,
@@ -194,7 +202,6 @@ async function loadConversationsOnly(): Promise<Conversation[]> {
     })
   }
 
-  // сортировка
   list.sort((a, b) => {
     const ta = a.last_time ? new Date(a.last_time).getTime() : 0
     const tb = b.last_time ? new Date(b.last_time).getTime() : 0
@@ -204,11 +211,9 @@ async function loadConversationsOnly(): Promise<Conversation[]> {
   return list
 }
 
-/**
- * ===== 2. ЗАГРУЗКА ДРУЗЕЙ =====
- */
 async function loadFriendsOnly(): Promise<Conversation[]> {
   if (!myId.value) return []
+
   const { data, error } = await supabase
     .from('friendships')
     .select('requester, addressee, status')
@@ -218,8 +223,7 @@ async function loadFriendsOnly(): Promise<Conversation[]> {
   const accepted: string[] = []
   for (const row of data ?? []) {
     if (row.status === 'accepted') {
-      const other = row.requester === myId.value ? row.addressee : row.requester
-      accepted.push(other)
+      accepted.push(row.requester === myId.value ? row.addressee : row.requester)
     }
   }
   if (accepted.length === 0) return []
@@ -241,29 +245,22 @@ async function loadFriendsOnly(): Promise<Conversation[]> {
       other_username: p.username ?? null,
       other_avatar_url: av ?? null,
       source: 'friend'
-    } as Conversation
+    }
   })
 }
 
-/**
- * ===== 3. собрать левую колонку =====
- */
 async function loadAllLeft() {
   if (!myId.value) return
   loading.value = true
   err.value = null
   try {
-    const [convList, friendList] = await Promise.all([
-      loadConversationsOnly(),
-      loadFriendsOnly()
-    ])
+    const [convList, friendList] = await Promise.all([loadConversationsOnly(), loadFriendsOnly()])
     const convUserIds = new Set(convList.map(c => c.other_user_id))
     const onlyNewFriends = friendList.filter(f => !convUserIds.has(f.other_user_id))
     conversations.value = [...convList, ...onlyNewFriends]
 
     if (!currentConvId.value && convList[0]) {
       currentConvId.value = convList[0].id
-      // Дальше сработает watch(currentConvId)
     }
   } catch (e: any) {
     err.value = e?.message ?? 'Failed to load messages'
@@ -272,40 +269,89 @@ async function loadAllLeft() {
   }
 }
 
-/**
- * ===== 4. загрузка сообщений (с расшифровкой) =====
- */
 async function loadMessages(convId: string) {
   if (!convId) return
+  hasMoreOlder.value = true
+  oldestLoadedAt.value = null
+
   const { data, error } = await supabase
     .from('messages')
     .select('*')
     .eq('conversation_id', convId)
-    .order('created_at', { ascending: true })
-    .limit(200)
+    .order('created_at', { ascending: false })
+    .limit(PAGE_SIZE)
+
   if (error) {
     err.value = error.message
     messages.value = []
-  } else {
-    const conv = conversations.value.find(c => c.id === convId)
-    const otherUserId = conv?.other_user_id
-    const out: MessageRow[] = []
-    for (const m of (data ?? [])) {
-      const txt = await decryptText(convId, m, otherUserId)
-      out.push({ ...m, body: txt })
+    return
+  }
+
+  const out: MessageRow[] = []
+  const ordered = [...(data ?? [])].reverse()
+  for (const m of ordered) {
+    const txt = await decryptText(convId, m)
+    out.push({ ...m, body: txt })
+  }
+  messages.value = out
+  oldestLoadedAt.value = out[0]?.created_at ?? null
+  hasMoreOlder.value = (data?.length ?? 0) === PAGE_SIZE
+  await scrollToBottom()
+}
+
+async function loadOlderMessages() {
+  if (!currentConvId.value || !oldestLoadedAt.value || loadingOlder.value || !hasMoreOlder.value) return
+  loadingOlder.value = true
+
+  const convId = currentConvId.value
+  const el = messageViewport.value
+  const prevHeight = el?.scrollHeight ?? 0
+
+  try {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('conversation_id', convId)
+      .lt('created_at', oldestLoadedAt.value)
+      .order('created_at', { ascending: false })
+      .limit(PAGE_SIZE)
+
+    if (error) throw error
+
+    const chunk: MessageRow[] = []
+    const ordered = [...(data ?? [])].reverse()
+    for (const m of ordered) {
+      const txt = await decryptText(convId, m)
+      chunk.push({ ...m, body: txt })
     }
-    messages.value = out
+
+    if (chunk.length === 0) {
+      hasMoreOlder.value = false
+      return
+    }
+
+    messages.value = [...chunk, ...messages.value]
+    oldestLoadedAt.value = messages.value[0]?.created_at ?? oldestLoadedAt.value
+    hasMoreOlder.value = (data?.length ?? 0) === PAGE_SIZE
+
+    await nextTick()
+    if (el) {
+      const newHeight = el.scrollHeight
+      el.scrollTop += newHeight - prevHeight
+      viewportScrollTop.value = el.scrollTop
+    }
+  } catch (e: any) {
+    err.value = e?.message ?? 'Failed to load older messages'
+  } finally {
+    loadingOlder.value = false
   }
 }
 
-/**
- * ===== 5. realtime =====
- */
 function subscribeToConversation(convId: string) {
   while (subs.length) {
-    const ch = subs.pop()
-    ch?.unsubscribe()
+    subs.pop()?.unsubscribe()
   }
+
   const ch = supabase
     .channel(`conv-${convId}`)
     .on(
@@ -317,41 +363,37 @@ function subscribeToConversation(convId: string) {
         filter: `conversation_id=eq.${convId}`
       },
       async payload => {
+        const shouldStick = isNearBottom()
         const newMsg = payload.new as MessageRow
-        const conv = conversations.value.find(c => c.id === convId)
-        const otherUserId = conv?.other_user_id
-        const decryptedText = await decryptText(convId, newMsg, otherUserId)
+        const decryptedText = await decryptText(convId, newMsg)
         appendMessageUnique({ ...newMsg, body: decryptedText })
+        if (shouldStick) await scrollToBottom()
         await loadAllLeft()
       }
     )
     .subscribe()
+
   subs.push(ch)
 }
 
-watch(currentConvId, (val) => {
-  if (val) {
-    loadMessages(val)
-    subscribeToConversation(val)
-  }
+watch(currentConvId, async (val) => {
+  if (!val) return
+  await loadMessages(val)
+  subscribeToConversation(val)
 })
 
-/**
- * ===== 6. отправка =====
- */
 async function sendMessage() {
   if (!text.value.trim() || !myId.value || !currentConvId.value) return
   sending.value = true
   const convId = currentConvId.value
   const plain = text.value.trim()
+
   try {
     const { data, error } = await supabase
       .from('messages')
       .insert({
         conversation_id: convId,
         sender_id: myId.value,
-        // Локальное "E2E" из localStorage несовместимо между устройствами/пользователями.
-        // Для корректной переписки отправляем обычный текст, а decryptText оставляем для старых сообщений.
         body: plain
       })
       .select()
@@ -359,9 +401,9 @@ async function sendMessage() {
 
     if (!error && data) {
       text.value = ''
-      // сразу расшифруем, чтобы не ждать realtime
       const decrypted = await decryptText(convId, data)
       appendMessageUnique({ ...data, body: decrypted })
+      await scrollToBottom()
       await loadAllLeft()
     }
   } finally {
@@ -369,9 +411,6 @@ async function sendMessage() {
   }
 }
 
-/**
- * ===== 7. создать диалог с другом =====
- */
 async function startDirectWith(targetUserId: string): Promise<string | null> {
   if (!myId.value || !targetUserId || targetUserId === myId.value) return null
 
@@ -408,21 +447,23 @@ async function startDirectWith(targetUserId: string): Promise<string | null> {
   return conv.id as string
 }
 
-/**
- * ===== init =====
- */
+async function onMessagesScroll() {
+  syncViewportMetrics()
+  if (viewportScrollTop.value < 72 && hasMoreOlder.value && !loadingOlder.value) {
+    await loadOlderMessages()
+  }
+}
+
 onMounted(async () => {
   await loadAllLeft()
+  await nextTick()
+  syncViewportMetrics()
 
-  // если пришли /messages?to=...
   const to = route.query.to as string | undefined
   if (to && myId.value) {
     pendingDirect.value = true
     const convId = await startDirectWith(to)
-    if (convId) {
-      currentConvId.value = convId
-      // Дальше сработает watch(currentConvId)
-    }
+    if (convId) currentConvId.value = convId
     pendingDirect.value = false
   }
 })
@@ -437,14 +478,13 @@ onBeforeUnmount(() => {
 <template>
   <main class="p-6 section mx-auto mt-16">
     <div class="flex gap-4 h-[calc(100vh-110px)]">
-      <!-- LEFT -->
       <aside class="w-72 shrink-0 glass-card glass-panel p-3 flex flex-col">
         <div class="flex items-center justify-between mb-3">
           <h1 class="text-lg font-semibold">Messages</h1>
           <span class="text-xs text-white/40">{{ conversations.length }} chat{{ conversations.length===1?'':'s' }}</span>
         </div>
 
-        <div v-if="loading" class="text-sm text-white/40">Loading…</div>
+        <div v-if="loading" class="text-sm text-white/40">Loading...</div>
         <div v-else-if="conversations.length === 0" class="text-sm text-white/40">
           No conversations yet.
         </div>
@@ -485,7 +525,6 @@ onBeforeUnmount(() => {
         </div>
       </aside>
 
-      <!-- RIGHT -->
       <section class="flex-1 glass-card glass-panel flex flex-col min-w-0">
         <header class="px-4 py-3 border-b border-white/5 flex items-center gap-3">
           <div class="flex-1">
@@ -494,26 +533,41 @@ onBeforeUnmount(() => {
             </div>
             <div class="text-xs text-white/40">
               Direct chat
-              <span v-if="pendingDirect" class="ml-1 text-[10px] text-white/25">opening…</span>
+              <span v-if="pendingDirect" class="ml-1 text-[10px] text-white/25">opening...</span>
             </div>
           </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+        <div
+          ref="messageViewport"
+          class="flex-1 overflow-y-auto px-4 py-4"
+          @scroll="onMessagesScroll"
+        >
           <div v-if="err" class="text-red-400 text-sm">{{ err }}</div>
-          <div
-            v-for="m in messages"
-            :key="m.id"
-            class="msg"
-            :class="{ mine: m.sender_id === myId }"
-          >
-            <div class="bubble">
-              {{ m.body }}
+          <div v-if="loadingOlder" class="text-xs text-white/40 text-center mb-2">Loading older messages...</div>
+
+          <template v-if="currentConvId">
+            <div :style="{ height: topSpacerHeight + 'px' }"></div>
+            <div
+              v-for="m in visibleMessages"
+              :key="m.id"
+              class="msg-row"
+            >
+              <div
+                class="msg"
+                :class="{ mine: m.sender_id === myId }"
+              >
+                <div class="bubble">
+                  {{ m.body }}
+                </div>
+                <div class="time">
+                  {{ new Date(m.created_at).toLocaleTimeString() }}
+                </div>
+              </div>
             </div>
-            <div class="time">
-              {{ new Date(m.created_at).toLocaleTimeString() }}
-            </div>
-          </div>
+            <div :style="{ height: bottomSpacerHeight + 'px' }"></div>
+          </template>
+
           <div v-if="!currentConvId && !pendingDirect" class="text-sm text-white/30 mt-8 text-center">
             Select a conversation or click on a friend.
           </div>
@@ -524,7 +578,7 @@ onBeforeUnmount(() => {
             v-model="text"
             type="text"
             class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 outline-none focus:border-eter-accent"
-            placeholder="Write a message…"
+            placeholder="Write a message..."
             @keyup.enter="sendMessage"
             :disabled="!currentConvId"
           />
@@ -552,6 +606,9 @@ onBeforeUnmount(() => {
   background: rgba(142,180,255,.12);
   border-color: rgba(142,180,255,.35);
 }
+.msg-row {
+  margin-bottom: 8px;
+}
 .msg{
   display:flex;
   flex-direction:column;
@@ -569,6 +626,7 @@ onBeforeUnmount(() => {
   font-size:.875rem;
   line-height:1.3;
   width: fit-content;
+  word-break: break-word;
 }
 .msg.mine .bubble{
   background: rgba(143,195,255,.12);

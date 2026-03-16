@@ -14,18 +14,11 @@
       </RouterLink>
 
       <nav class="hidden md:flex items-center gap-6 text-sm">
-        <RouterLink v-slot="{ isActive }" to="/support">
-          <span :class="linkClass(isActive)">Support</span>
-        </RouterLink>
-        <RouterLink v-slot="{ isActive }" to="/legal">
-          <span :class="linkClass(isActive)">Legal</span>
-        </RouterLink>
-        <RouterLink v-slot="{ isActive }" to="/privacy">
-          <span :class="linkClass(isActive)">Privacy</span>
-        </RouterLink>
-        <RouterLink v-if="isAuthed" v-slot="{ isActive }" to="/account">
-          <span :class="linkClass(isActive)">Account</span>
-        </RouterLink>
+        <a href="/#agassu" :class="linkClass()">Games</a>
+        <a href="/#support" :class="linkClass()">Community</a>
+        <a href="/#devlog" :class="linkClass()">Devlog</a>
+        <RouterLink to="/support" :class="linkClass()">Support</RouterLink>
+        <RouterLink v-if="isAuthed" to="/account" :class="linkClass()">Account</RouterLink>
       </nav>
 
       <div class="hidden md:flex items-center gap-2">
@@ -135,15 +128,11 @@
     <transition name="fade">
       <div v-if="open" class="md:hidden px-4 pb-4">
         <div class="drawer">
+          <a class="drawer-link" href="/#agassu" @click="open = false">Games</a>
+          <a class="drawer-link" href="/#support" @click="open = false">Community</a>
+          <a class="drawer-link" href="/#devlog" @click="open = false">Devlog</a>
           <RouterLink class="drawer-link" to="/support" @click="open = false">Support</RouterLink>
-<RouterLink class="drawer-link" to="/legal" @click="open = false">Legal</RouterLink>
-<RouterLink class="drawer-link" to="/privacy" @click="open = false">Privacy</RouterLink>
-<RouterLink class="drawer-link" to="/store" @click="open = false">
-  <span class="inline-flex items-center gap-2">
-    Store <span class="badge soon">Soon</span>
-  </span>
-</RouterLink>
-<RouterLink v-if="isAuthed" class="drawer-link" to="/account" @click="open = false">Account</RouterLink>
+          <RouterLink v-if="isAuthed" class="drawer-link" to="/account" @click="open = false">Account</RouterLink>
           <div class="mt-3 grid grid-cols-2 gap-2">
             <button v-if="!isAuthed" type="button" class="nav-cta" @click.stop.prevent="$emit('signin'); open = false;">Sign in</button>
             <button v-if="!isAuthed" type="button" class="nav-cta nav-cta--accent" @click.stop.prevent="$emit('signup'); open = false;">Sign up</button>
@@ -249,8 +238,8 @@ async function markAllRead() {
 
 const isAdmin = computed(() => user.value?.app_metadata?.role === 'admin')
 
-function linkClass(active: boolean) {
-  return ['relative transition-colors', active ? 'text-white' : 'text-white/80 hover:text-white']
+function linkClass() {
+  return 'header-link'
 }
 
 function onSignin(){ emit('signin'); open.value = false }
@@ -324,52 +313,74 @@ function toggleDrawer(){
   backdrop-filter: blur(10px) saturate(1.2);
   -webkit-backdrop-filter: blur(10px) saturate(1.2);
   background:
-    radial-gradient(120% 120% at 10% -20%, rgba(160,190,255,.10), rgba(255,255,255,0) 60%),
+    radial-gradient(120% 120% at 10% -20%, rgba(196,104,255,.24), rgba(255,255,255,0) 60%),
     linear-gradient(180deg, rgba(18,20,26,.86), rgba(12,14,18,.86));
   border-bottom: 1px solid rgba(255,255,255,.06);
   box-shadow: 0 10px 26px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
 }
 .accent-line{
-  height: 2px; width: 100%;
-  background: linear-gradient(90deg, rgba(110,200,255,.0), rgba(110,200,255,.65), rgba(160,120,255,.0));
-  filter: drop-shadow(0 0 6px rgba(120,200,255,.35)); opacity: .65;
+  height: 2px;
+  width: 100%;
+  background-size: 200% 100%;
+  background:
+    linear-gradient(90deg, rgba(110,200,255,0) 0%, rgba(230,106,255,.95) 35%, rgba(180,124,255,.95) 50%, rgba(230,106,255,.95) 65%, rgba(160,120,255,0) 100%);
+  filter: drop-shadow(0 0 8px rgba(224,104,255,.62));
+  opacity: .9;
+  animation: energyFlow 2.8s linear infinite;
+}
+.header-link {
+  color: rgba(255,255,255,.8);
+  transition: color .18s ease, text-shadow .18s ease;
+}
+.header-link:hover {
+  color: rgba(255,255,255,.96);
+  text-shadow: 0 0 14px rgba(206,110,255,.36);
+}
+@keyframes energyFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
 }
 .nav-cta{
   @apply text-sm;
-  border: 1px solid rgba(255,255,255,.14);
+  border: 1px solid rgba(220,150,255,.5);
   color: rgba(255,255,255,.94);
   padding: .45rem .85rem;
   border-radius: 12px;
   background:
-    radial-gradient(120% 120% at 18% -20%, rgba(148,180,255,.10), rgba(148,180,255,0) 58%),
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    radial-gradient(120% 120% at 18% -20%, rgba(206,110,255,.42), rgba(148,180,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.03));
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.10),
+    inset 0 1px 0 rgba(255,255,255,.18),
     inset 0 -1px 0 rgba(0,0,0,.34),
-    0 8px 18px rgba(0,0,0,.28);
+    0 8px 18px rgba(0,0,0,.3),
+    0 0 0 1px rgba(206,110,255,.2);
   transition: border-color .18s ease, box-shadow .18s ease, background .18s ease, transform .12s ease;
 }
 .nav-cta:hover{
-  border-color: rgba(148,180,255,.24);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.12),
-    inset 0 -1px 0 rgba(0,0,0,.38),
-    0 12px 24px rgba(0,0,0,.34);
+  border-color: rgba(232,152,255,.7);
   background:
-    radial-gradient(120% 120% at 18% -20%, rgba(148,180,255,.15), rgba(148,180,255,0) 58%),
-    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+    radial-gradient(120% 120% at 18% -20%, rgba(218,126,255,.56), rgba(148,180,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.22),
+    inset 0 -1px 0 rgba(0,0,0,.38),
+    0 12px 24px rgba(0,0,0,.36),
+    0 0 0 1px rgba(230,146,255,.3),
+    0 0 24px rgba(206,110,255,.3);
   transform: translateY(-1px);
 }
 .nav-cta:active{ transform: translateY(0); }
 .nav-cta--accent{
-  border-color: rgba(148,180,255,.3);
+  border-color: rgba(232,152,255,.72);
   background:
-    radial-gradient(120% 120% at 18% -20%, rgba(148,180,255,.18), rgba(148,180,255,0) 58%),
-    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+    radial-gradient(120% 120% at 18% -20%, rgba(218,126,255,.62), rgba(148,180,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.05));
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.24),
     inset 0 -1px 0 rgba(0,0,0,.34),
-    0 10px 22px rgba(0,0,0,.32);
+    0 10px 22px rgba(0,0,0,.34),
+    0 0 0 1px rgba(230,146,255,.34),
+    0 0 20px rgba(206,110,255,.3);
 }
 .badge{
   display:inline-block;
@@ -384,16 +395,16 @@ function toggleDrawer(){
 
 /* уже используется в Messages — заодно нормально оформим */
 .badge.ok{
-  background:rgba(80,200,120,.18);
-  border-color:rgba(80,200,120,.35);
-  color:#c7ffd9;
+  background:rgba(198,106,255,.2);
+  border-color:rgba(198,106,255,.45);
+  color:#f0d6ff;
 }
 
 /* новый бейдж для Store */
 .badge.soon{
-  background:rgba(160,120,255,.16);
-  border-color:rgba(160,120,255,.45);
-  color:#e6ddff;
+  background:rgba(196,104,255,.24);
+  border-color:rgba(196,104,255,.62);
+  color:#f6e8ff;
 }
 
 /* user pill */
@@ -409,7 +420,7 @@ function toggleDrawer(){
 .avatar-dot{
   width:22px; height:22px; border-radius:9999px; display:grid; place-items:center;
   font-weight:700; font-size:.8rem;
-  background: linear-gradient(180deg, rgba(160,120,255,.35), rgba(110,200,255,.25));
+  background: linear-gradient(180deg, rgba(196,104,255,.5), rgba(226,112,255,.36));
   border:1px solid rgba(255,255,255,.18);
 }
 /* картинка-аватар вместо точки */
@@ -424,7 +435,7 @@ function toggleDrawer(){
   position:absolute; right:0; margin-top:.5rem; min-width:220px;
   border:1px solid rgba(255,255,255,.12); border-radius:12px;
   background:
-    radial-gradient(120% 120% at 10% -20%, rgba(160,190,255,.10), rgba(255,255,255,0) 60%),
+    radial-gradient(120% 120% at 10% -20%, rgba(196,104,255,.24), rgba(255,255,255,0) 60%),
     linear-gradient(180deg, rgba(18,20,26,.96), rgba(12,14,18,.96));
   box-shadow: 0 12px 36px rgba(0,0,0,.45);
   top: 32px;
@@ -448,7 +459,7 @@ function toggleDrawer(){
   border: 1px solid rgba(255,255,255,.10);
   border-radius: 14px;
   background:
-    radial-gradient(120% 120% at 10% -20%, rgba(160,190,255,.10), rgba(255,255,255,0) 60%),
+    radial-gradient(120% 120% at 10% -20%, rgba(196,104,255,.24), rgba(255,255,255,0) 60%),
     linear-gradient(180deg, rgba(18,20,26,.92), rgba(12,14,18,.92));
   box-shadow: 0 12px 36px rgba(0,0,0,.45); padding: .75rem;
 }

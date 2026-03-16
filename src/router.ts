@@ -1,6 +1,7 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from './lib/superbase'
+import { playPortalJump } from './lib/portalTransition'
 
 const Home = () => import('./pages/Home.vue')
 const Support = () => import('./pages/Support.vue')
@@ -43,7 +44,10 @@ export const router = createRouter({
   scrollBehavior() { return { left: 0, top: 0 } }
 })
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
+  if (to.path === '/games/agassu' && from.path !== '/games/agassu') {
+    await playPortalJump()
+  }
 
   if (!to.meta?.auth) return true
 

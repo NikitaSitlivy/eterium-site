@@ -10,8 +10,8 @@
       ></div>
 
       <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/20"></div>
-      <div class="absolute inset-x-0 bottom-0 h-56 md:h-80 bg-gradient-to-t from-[#050608] via-[#050608]/85 to-transparent"></div>
-      <div class="absolute inset-0 mix-blend-screen "></div>
+      <div class="absolute inset-x-0 bottom-0 h-56 md:h-80 bg-gradient-to-t from-[#07080b] via-[#07080b]/85 to-transparent"></div>
+      <div class="absolute inset-0 mix-blend-screen"></div>
 
       <div class="relative z-10 section">
         <div class="max-w-4xl">
@@ -23,19 +23,19 @@
           <h1
             class="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]"
           >
-            AGASSU — horror roguelike<br class="hidden md:block" />
+            AGASSU - horror roguelike<br class="hidden md:block" />
             that runs <span class="text-eter-accent">instantly</span> in your browser
           </h1>
 
           <p
             class="mt-5 text-white/80 text-lg md:text-xl max-w-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
           >
-            No installs. Squad up in seconds. WebGPU visuals, console-grade feel — click and play.
+            No installs. Squad up in seconds. WebGPU visuals, console-grade feel - click and play.
           </p>
 
           <div class="mt-8 flex flex-col sm:flex-row items-center gap-3">
-            <RouterLink to="/games/agassu" class="glass-btn  comet">View Game</RouterLink>
-            <a href="#why" class="glass-btn  comet">Learn More</a>
+            <RouterLink to="/games/agassu" class="glass-btn comet">Enter the Portal</RouterLink>
+            <a href="#why" class="glass-btn comet">Play Instantly</a>
           </div>
 
           <div class="mt-10 flex flex-wrap items-center gap-2 text-sm">
@@ -55,7 +55,7 @@
         <div class="space-y-4">
           <h2 class="text-3xl md:text-5xl font-extrabold">Why Browser-Native is the Future</h2>
           <p class="text-white/70">
-            WebGPU and modern WebGL unlock console-grade visuals on the web — with instant startup,
+            WebGPU and modern WebGL unlock console-grade visuals on the web - with instant startup,
             cross-device by design. No launchers. No drivers. Just click and play.
           </p>
           <div class="flex gap-3 flex-wrap">
@@ -69,10 +69,10 @@
         <div class="glass-card glass-panel p-6 md:p-8 tilt" :ref="tiltRefs">
           <h3 class="font-semibold text-xl mb-4">What it means for players</h3>
           <ul class="space-y-3 text-white/80">
-            <li>• Join friends in seconds — zero friction.</li>
-            <li>• Smooth visuals powered by your GPU.</li>
-            <li>• Play anywhere: desktop, laptop — even low-end machines.</li>
-            <li>• Social features baked in: parties, chat, profiles.</li>
+            <li>- Join friends in seconds with zero friction.</li>
+            <li>- Smooth visuals powered by your GPU.</li>
+            <li>- Play anywhere: desktop, laptop, and lower-end machines.</li>
+            <li>- Social features baked in: parties, chat, profiles.</li>
           </ul>
         </div>
       </div>
@@ -82,7 +82,7 @@
       <div class="grid lg:grid-cols-2 gap-8 items-stretch">
         <div class="glass-card p-6 md:p-8 flex flex-col justify-between tilt glass-panel" :ref="tiltRefs">
           <div>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-3">AGASSU — in development</h2>
+            <h2 class="text-3xl md:text-5xl font-extrabold mb-3">AGASSU - in development</h2>
             <p class="text-white/70">
               A third-person co-op roguelike horror with dynamic progression between sessions.
               Procedural tension. Team up to survive and evolve your build run after run.
@@ -93,18 +93,29 @@
             </div>
           </div>
           <div class="mt-6 flex gap-3">
-            <RouterLink class="glass-btn  comet" to="/games/agassu">View game page</RouterLink>
-            <a class="glass-btn  comet" href="#roadmap">Follow devlogs</a>
+            <RouterLink class="glass-btn comet" to="/games/agassu">View game page</RouterLink>
+            <a class="glass-btn comet" href="#devlog">Follow devlogs</a>
           </div>
         </div>
 
         <div class="glass-card p-0 overflow-hidden relative tilt glass-panel" :ref="tiltRefs">
-          <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-eter-bg/40 to-transparent"></div>
-          <div class="relative h-[360px] md:h-[460px] overflow-hidden">
-            <div class="absolute inset-0" v-for="(n, i) in 6" :key="i" :style="carouselSlideStyle(i)"></div>
+          <div class="portal-visual relative h-[360px] md:h-[460px] overflow-hidden">
+            <div class="portal-aura"></div>
+            <div class="portal-core"></div>
+            <div class="portal-ring ring-1"></div>
+            <div class="portal-ring ring-2"></div>
+            <div class="portal-particles">
+              <span
+                v-for="n in 18"
+                :key="`portal-particle-${n}`"
+                class="particle"
+                :style="portalParticleStyle(n)"
+              ></span>
+            </div>
+            <div class="water-light"></div>
           </div>
           <div class="p-4 md:p-6 text-sm text-white/60">
-            Concept art is AI-generated as a temporary placeholder. Final visuals will evolve during development.
+            Energy Rift preview. Final in-game portal VFX will be integrated during production.
           </div>
         </div>
       </div>
@@ -113,21 +124,21 @@
     <section id="support" class="section py-24 md:py-32 will-reveal">
       <div class="grid md:grid-cols-3 gap-6">
         <div class="md:col-span-2 tilt" :ref="tiltRefs">
-          <div class="glass-card p-6 md:p-8 glass-panel">
+          <div class="glass-card p-6 md:p-8 glass-panel" id="devlog">
             <h2 class="text-3xl md:text-5xl font-extrabold mb-4">Support the Project</h2>
             <p class="text-white/70">
-              Eterium is for everyone — play and socialize right in the browser, regardless of your PC.
-              We’re building a universe of games that launch instantly and bring people together.
+              Eterium is for everyone - play and socialize right in the browser, regardless of your PC.
+              We are building a universe of games that launch instantly and bring people together.
               Early backers will receive unique perks as we grow.
             </p>
             <ul class="mt-4 text-white/80 space-y-2">
-              <li>• Founder badge on your profile (future).</li>
-              <li>• Early access to demos and playtests.</li>
-              <li>• Exclusive profile backgrounds and cosmetics.</li>
+              <li>- Founder badge on your profile (future).</li>
+              <li>- Early access to demos and playtests.</li>
+              <li>- Exclusive profile backgrounds and cosmetics.</li>
             </ul>
             <div class="mt-6 flex gap-3">
-              <RouterLink class="glass-btn  comet" to="/support">Become a backer</RouterLink>
-              <a class="glass-btn  comet" href="#rewards">See future rewards</a>
+              <RouterLink class="glass-btn comet" to="/support">Become a backer</RouterLink>
+              <a class="glass-btn comet" href="#rewards">See future rewards</a>
             </div>
           </div>
         </div>
@@ -135,9 +146,9 @@
         <div class="glass-card glass-panel p-6 md:p-8 tilt" :ref="tiltRefs">
           <h3 class="font-semibold text-xl mb-2">Choose your way</h3>
           <ul class="text-white/80 space-y-2">
-            <li>• One-time donation (pay what you want)</li>
-            <li>• Monthly backer</li>
-            <li>• Tip jar</li>
+            <li>- One-time donation (pay what you want)</li>
+            <li>- Monthly backer</li>
+            <li>- Tip jar</li>
           </ul>
           <p class="text-xs text-white/50 mt-4">Secure payments via Stripe or Ko-fi.</p>
         </div>
@@ -146,19 +157,17 @@
 
     <section id="minigame" class="section py-24 md:py-32 will-reveal">
       <div class="glass-card p-8 text-center tilt glass-panel" :ref="tiltRefs">
-        <h2 class="text-3xl md:text-5xl font-extrabold">Mini Game — coming soon</h2>
+        <h2 class="text-3xl md:text-5xl font-extrabold">Play the Prologue</h2>
         <p class="text-white/70 mt-2">
-          We’re crafting a small, addictive browser game to play instantly on this page.
+          Enter the First Rift and test a fast AGASSU vertical slice right in the browser.
         </p>
-        <button class="glass-btn  comet mt-6" title="Coming soon" disabled>
-          Play now
-        </button>
+        <RouterLink to="/games/agassu" class="glass-btn comet mt-6">Enter the First Rift</RouterLink>
       </div>
     </section>
 
     <footer class="border-t border-white/5 py-10 mt-10">
       <div class="section flex flex-col md:flex-row items-center justify-between gap-4 text-white/60 text-sm">
-        <div>© {{ new Date().getFullYear() }} Eterium</div>
+        <div>&copy; {{ new Date().getFullYear() }} Eterium</div>
         <nav class="flex gap-4">
           <a href="#why" class="hover:text-white/80">Why</a>
           <RouterLink to="/support" class="hover:text-white/80">Support</RouterLink>
@@ -171,7 +180,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { RouterLink } from 'vue-router'
 
@@ -185,13 +194,13 @@ function setupReveal() {
   io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (e.isIntersecting) {
-        (e.target as HTMLElement).classList.add('revealed')
+        ;(e.target as HTMLElement).classList.add('revealed')
         io?.unobserve(e.target)
       }
     }
   }, { threshold: 0.15 })
   document.querySelectorAll<HTMLElement>('.will-reveal').forEach((el) => {
-    if (!el.classList.contains('revealed')) io!.observe(el)
+    if (!el.classList.contains('revealed')) io?.observe(el)
   })
 }
 
@@ -200,7 +209,7 @@ function setupNavHighlight() {
   ioNav = new IntersectionObserver(() => {}, { threshold: 0.5 })
   ;['why', 'agassu', 'support', 'minigame'].forEach((id) => {
     const el = document.getElementById(id)
-    if (el) ioNav!.observe(el)
+    if (el) ioNav?.observe(el)
   })
 }
 
@@ -225,7 +234,9 @@ function attachTilt(el: HTMLElement) {
     const ny = (e.clientY - r.top) / r.height - 0.5
     el.style.transform = `perspective(800px) rotateX(${ny * -4}deg) rotateY(${nx * 4}deg)`
   }
-  const onLeave = () => { el.style.transform = 'perspective(800px) rotateX(0) rotateY(0)' }
+  const onLeave = () => {
+    el.style.transform = 'perspective(800px) rotateX(0) rotateY(0)'
+  }
   el.addEventListener('mousemove', onMove)
   el.addEventListener('mouseleave', onLeave)
   return () => {
@@ -233,364 +244,154 @@ function attachTilt(el: HTMLElement) {
     el.removeEventListener('mouseleave', onLeave)
   }
 }
+
 const cleanups: Array<() => void> = []
 
-const carouselOffset = ref(0)
-function carouselSlideStyle(i: number) {
-  const hue = 215 + (i * 9)
-  const x = ((i * 100) - (carouselOffset.value % 600))
-  const scale = 1 + Math.sin((carouselOffset.value * 0.01) + i) * 0.015
+function portalParticleStyle(i: number) {
+  const seed = i * 37
+  const x = (seed % 84) + 8
+  const size = 2 + (seed % 4)
+  const delay = (seed % 11) * 0.2
+  const duration = 3.6 + (seed % 7) * 0.4
   return {
-    backgroundImage: `radial-gradient(120% 120% at 70% 30%, rgba(148,180,255,0.35), rgba(10,11,15,0.1) 40%, transparent 70%), linear-gradient(135deg, hsl(${hue},70%,18%), hsl(${hue+10},62%,10%))`,
-    transform: `translateX(${x}%) scale(${scale})`,
-    transition: 'transform 0.2s linear',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    filter: 'contrast(1.05) saturate(1.1)',
-    willChange: 'transform'
+    left: `${x}%`,
+    width: `${size}px`,
+    height: `${size}px`,
+    animationDelay: `${delay}s`,
+    animationDuration: `${duration}s`
   }
 }
-let timer: number | null = null
 
 onMounted(() => {
   setupReveal()
   setupNavHighlight()
   tiltEls.forEach((el) => cleanups.push(attachTilt(el)))
-  timer = window.setInterval(() => { carouselOffset.value += 1 }, 30)
 })
 
 onBeforeUnmount(() => {
   io?.disconnect()
   ioNav?.disconnect()
   cleanups.forEach((fn) => fn())
-  if (timer) clearInterval(timer)
 })
 </script>
 
 <style scoped lang="postcss">
-.glass-base {
-  @apply border border-white/15 text-white/90 backdrop-blur-2xl;
+.portal-visual {
   background:
-    radial-gradient(120% 80% at 15% -10%, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0) 46%),
-    linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.28),
-    0 10px 30px rgba(0,0,0,0.45),
-    0 2px 8px rgba(0,0,0,0.35);
-  position: relative;
+    radial-gradient(120% 100% at 50% 0%, rgba(188,108,255,0.2) 0%, rgba(8,10,16,0) 52%),
+    linear-gradient(180deg, rgba(11,12,22,0.92), rgba(8,9,15,0.96));
 }
-
-.glass-base::before {
-  content: "";
+.portal-aura {
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 40%) top left / 100% 50% no-repeat,
-    radial-gradient(60% 40% at 80% 0%, rgba(165,120,255,0.22), rgba(158,124,255,0) 60%);
-  opacity: 0.75;
-  mix-blend-mode: screen;
+  left: 50%;
+  top: 42%;
+  width: 320px;
+  height: 320px;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  filter: blur(30px);
+  background: radial-gradient(circle, rgba(188,108,255,0.4) 0%, rgba(124,180,255,0.18) 40%, rgba(0,0,0,0) 72%);
+  animation: portalPulse 3.6s ease-in-out infinite;
 }
-
-.glass-base:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255,255,255,0.22);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.3),
-    0 14px 36px rgba(0,0,0,0.5),
-    0 3px 10px rgba(0,0,0,0.35);
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-}
-/* Реалистичная стеклянная карточка */
-.glass-card {
-  position: relative;
-  border-radius: 1.25rem;              /* 20px */
-  overflow: hidden;
-
-  /* градиентный бордер через двойной бэкграунд */
-  border: 1px solid transparent;
-  background:
-    linear-gradient(to bottom, rgba(255,255,255,0.28), rgba(255,255,255,0.04)) border-box,  /* бордер-блик */
-    radial-gradient(120% 180% at 50% -20%, rgba(255,255,255,0.38), rgba(255,255,255,0) 55%) padding-box, /* верхний «свет» */
-    linear-gradient(180deg, rgba(24,26,34,0.55), rgba(24,26,34,0.35) 45%, rgba(10,10,12,0.55) 100%) padding-box; /* стеклянная масса */
-
-  backdrop-filter: blur(18px) saturate(1.35) contrast(1.05);
-  -webkit-backdrop-filter: blur(18px) saturate(1.35) contrast(1.05);
-
-  /* глубина и внутренняя тень снизу */
-  box-shadow:
-    inset 0 0.5px 0 rgba(255,255,255,0.45),       /* тонкий верхний кант */
-    inset 0 -1px 0 rgba(0,0,0,0.35),              /* нижний кант */
-    0 24px 80px rgba(0,0,0,0.55),                 /* большая тень */
-    0 8px 28px rgba(0,0,0,0.40);                  /* ближняя тень */
-  color: rgba(255,255,255,0.92);
-}
-
-/* верхний бликовый слой + холодный оттенок */
-.glass-card::before {
-  content: "";
+.portal-core {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
+  left: 50%;
+  top: 42%;
+  width: 170px;
+  height: 206px;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0) 42%) top/100% 60% no-repeat,
-    radial-gradient(70% 40% at 80% -10%, rgba(120,210,255,0.35), rgba(120,210,255,0) 60%);
-  mix-blend-mode: screen;
-  opacity: .85;
-}
-
-/* лёгкий внутренний виньет + микро-зерно, без base64 */
-.glass-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background:
-    radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,0.28), transparent 60%),
-    repeating-linear-gradient(45deg, rgba(255,255,255,0.012) 0 2px, rgba(255,255,255,0) 2px 4px);
-  opacity: .22; /* зерно еле заметно */
-}
-
-/* ховер — чуть больше «глубины» и светлее кант */
-.glass-card:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255,255,255,0.22);
+    radial-gradient(55% 70% at 48% 40%, rgba(239,172,255,0.94), rgba(188,108,255,0.58) 42%, rgba(75,114,255,0.25) 70%, rgba(0,0,0,0) 100%),
+    radial-gradient(75% 85% at 50% 55%, rgba(116,238,255,0.38), rgba(0,0,0,0) 70%);
   box-shadow:
-    inset 0 0.5px 0 rgba(255,255,255,0.55),
-    inset 0 -1px 0 rgba(0,0,0,0.4),
-    0 28px 90px rgba(0,0,0,0.6),
-    0 10px 32px rgba(0,0,0,0.45);
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    inset 0 0 24px rgba(255,255,255,0.44),
+    0 0 48px rgba(188,108,255,0.56),
+    0 0 80px rgba(84,160,255,0.32);
+  animation: portalBreath 2.8s ease-in-out infinite;
+}
+.portal-ring {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  border-radius: 9999px;
+  border: 1px solid rgba(219,154,255,0.44);
+  transform: translate(-50%, -50%);
+}
+.ring-1 {
+  width: 210px;
+  height: 260px;
+  animation: portalSpin 10s linear infinite;
+}
+.ring-2 {
+  width: 240px;
+  height: 290px;
+  border-color: rgba(122,181,255,0.34);
+  animation: portalSpinReverse 14s linear infinite;
+}
+.portal-particles {
+  position: absolute;
+  inset: 12% 8% 24%;
+}
+.particle {
+  position: absolute;
+  bottom: 0;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(232,188,255,0.94), rgba(132,180,255,0.7));
+  box-shadow: 0 0 10px rgba(188,108,255,0.72);
+  animation-name: particleRise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.water-light {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -28px;
+  height: 170px;
+  background:
+    radial-gradient(70% 78% at 50% 24%, rgba(152,118,255,0.34), rgba(99,149,255,0.14) 55%, rgba(0,0,0,0) 72%),
+    repeating-linear-gradient(95deg, rgba(188,108,255,0.14) 0 12px, rgba(92,140,255,0.08) 12px 24px);
+  filter: blur(7px);
+  transform: perspective(220px) rotateX(68deg);
+  opacity: 0.9;
+  animation: waterShimmer 4.4s ease-in-out infinite;
+}
+@keyframes portalPulse {
+  0%, 100% { opacity: .66; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+}
+@keyframes portalBreath {
+  0%, 100% { transform: translate(-50%, -50%) scale(.96); }
+  50% { transform: translate(-50%, -50%) scale(1.03); }
+}
+@keyframes portalSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes portalSpinReverse {
+  from { transform: translate(-50%, -50%) rotate(360deg); }
+  to { transform: translate(-50%, -50%) rotate(0deg); }
+}
+@keyframes particleRise {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: .9; }
+  100% { transform: translateY(-280px); opacity: 0; }
+}
+@keyframes waterShimmer {
+  0%, 100% { opacity: .76; transform: perspective(220px) rotateX(68deg) scaleX(1); }
+  50% { opacity: 1; transform: perspective(220px) rotateX(68deg) scaleX(1.06); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glass-card, .glass-card:hover { transition: none; transform: none; }
-}
-
-.glass-btn.comet {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium;
-  border: 1px solid rgba(255,255,255,.14) !important;
-  color: rgba(255,255,255,.94) !important;
-  background:
-    radial-gradient(130% 110% at 16% -22%, rgba(120,170,255,.14) 0%, rgba(120,170,255,0) 58%),
-    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.018)) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.10),
-    inset 0 -1px 0 rgba(0,0,0,.34),
-    0 10px 24px rgba(0,0,0,.32) !important;
-  letter-spacing: .01em;
-  transition: transform 140ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
-}
-
-.glass-btn.comet:hover {
-  transform: translateY(-1px);
-  border-color: rgba(148,180,255,.24) !important;
-  background:
-    radial-gradient(130% 110% at 16% -22%, rgba(120,170,255,.18) 0%, rgba(120,170,255,0) 58%),
-    linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.028)) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.12),
-    inset 0 -1px 0 rgba(0,0,0,.38),
-    0 14px 30px rgba(0,0,0,.36),
-    0 0 0 1px rgba(148,180,255,.06) !important;
-}
-
-.glass-btn.comet:active {
-  transform: translateY(0);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    inset 0 -1px 0 rgba(0,0,0,.45),
-    0 6px 14px rgba(0,0,0,0.36) !important;
-}
-
-.glass-btn.comet:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 3px rgba(148,180,255,0.22),
-    0 0 0 1px rgba(148,180,255,0.34) inset,
-    0 10px 24px rgba(0,0,0,.32) !important;
-  border-color: rgba(148,180,255,0.34) !important;
-}
-
-.glass-btn.comet[disabled] {
-  @apply cursor-not-allowed opacity-60;
-  transform: none;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.22),
-    0 6px 16px rgba(0,0,0,0.35);
-}
-
-
-
-@media (prefers-reduced-motion: reduce) {
-  .glass-base { transition: none; }
-  .glass-base:hover { transform: none; }
-}
-/* Делает карточку визуально такой же, как glass-btn  comet / glass-pill */
-.glass-panel {
-  @apply border border-white/15 text-white/90 backdrop-blur-2xl rounded-3xl;
-  /* тот же стеклянный фон, что у .glass-base */
-  background:
-    radial-gradient(120% 80% at 15% -10%, rgba(165,120,255,0.26) 0%, rgba(165,120,255,0) 46%),
-    linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05)) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.28),
-    0 10px 30px rgba(0,0,0,0.45),
-    0 2px 8px rgba(0,0,0,0.35);
-  position: relative;
-  --tw-backdrop-blur: blur(0px);
-}
-
-/* убираем «доп. слои» из базовой glass-card */
-.glass-panel::before,
-.glass-panel::after {
-  content: none !important;
-}
-
-/* такой же hover, как у кнопок/пилюль */
-.glass-panel:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255,255,255,0.22);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.30),
-    0 14px 36px rgba(0,0,0,0.5),
-    0 3px 10px rgba(0,0,0,0.35);
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-}
-/* ===== Комета по бордеру для .glass-btn ===== */
-@property --angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
-.glass-btn.comet {
-  position: relative;
-  overflow: visible; /* glow может выходить за края */
-  border-radius: 14px;
-}
-
-/* Яркая «голова» кометы — тонкий пробегающий штрих */
-.glass-btn.comet::after {
-  content: "";
-  position: absolute;
-  inset: -2px;                 /* толщина неон-строки */
-  border-radius: inherit;
-  padding: 2px;                /* толщина обводки */
-  background:
-    conic-gradient(
-      from var(--angle),
-      transparent 0deg 330deg,
-      rgba(165,120,255,0.95) 345deg,
-      rgba(165,120,255,0.15) 360deg
-    );
-  /* показываем только рамку (вырезаем внутренность) */
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-
-  opacity: 0;
-  transition: opacity .2s ease;
-  pointer-events: none;
-}
-
-/* Мягкое свечение-хвост вокруг рамки */
-.glass-btn.comet::before {
-  content: "";
-  position: absolute;
-  inset: -6px;                 /* ширина внешнего сияния */
-  border-radius: inherit;
-  background:
-    conic-gradient(
-      from calc(var(--angle) - 8deg),
-      transparent 0deg 330deg,
-      rgba(165,120,255,0.55) 350deg,
-      rgba(165,120,255,0.0) 360deg
-    );
-  filter: blur(8px);
-  opacity: 0;
-  transition: opacity .2s ease;
-  pointer-events: none;
-}
-
-.glass-btn.comet:hover::after,
-.glass-btn.comet:hover::before,
-.glass-btn.comet:focus-visible::after,
-.glass-btn.comet:focus-visible::before {
-  opacity: 0;
-  animation: none;
-}
-
-/* чуть быстрее при active */
-.glass-btn.comet:active::after,
-.glass-btn.comet:active::before {
-  animation: none;
-}
-
-@keyframes comet-rotate {
-  to { --angle: 360deg; }
-}
-
-/* a11y: если пользователь просит меньше анимации — отключаем бегущую комету */
-@media (prefers-reduced-motion: reduce) {
-  .glass-btn.comet::before,
-  .glass-btn.comet::after {
+  .portal-aura,
+  .portal-core,
+  .portal-ring,
+  .particle,
+  .water-light {
     animation: none !important;
-    opacity: 0 !important;
+    transition: none !important;
+    transform: none !important;
   }
 }
-.glass-pill {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: .45rem;
-  padding: .28rem .7rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  font-size: .8125rem;
-  line-height: 1.1;
-  letter-spacing: .01em;
-  cursor: default;
-
-  /* цвет — как рамка кнопки */
-  color: rgba(255,255,255,.86);
-  border: 1px solid rgba(255,255,255,.12);
-  background:
-    radial-gradient(120% 160% at 18% -20%, rgba(140,170,255,.10), rgba(140,170,255,0) 62%),
-    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.016));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.06),
-    inset 0 -1px 0 rgba(0,0,0,.28);
-
-  transition: color .2s ease, border-color .2s ease, background .2s ease;
-}
-
-/* немного «живее» при наведении */
-.glass-pill:hover {
-  border-color: rgba(148,180,255,.22);
-  background:
-    radial-gradient(120% 160% at 18% -20%, rgba(140,170,255,.14), rgba(140,170,255,0) 62%),
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.08),
-    0 8px 16px rgba(0,0,0,.22);
-}
-
-/* можно добавить акцентный вариант */
-.glass-pill--accent {
-  border-color: rgba(148,180,255,.28);
-  background:
-    radial-gradient(120% 160% at 18% -20%, rgba(148,180,255,.20), rgba(148,180,255,0) 62%),
-    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.08),
-    0 10px 20px rgba(0,0,0,.24);
-}
-
-
 </style>
