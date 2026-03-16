@@ -299,12 +299,12 @@ async function onSubmit() {
       return
     }
 
-    const uname = form.username.trim().toLowerCase()
+    const uname = form.username.trim()
 
     const { data: existing, error: existsErr } = await supabase
       .from('profiles')
       .select('id')
-      .eq('username', uname)
+      .ilike('username', uname.replace(/([\\%_])/g, '\\$1'))
       .maybeSingle()
 
     if (existsErr?.code === 'PGRST205') {

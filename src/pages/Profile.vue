@@ -39,11 +39,11 @@ const editMode = ref(false);
 const formUsername = ref<string>("");
 const formBio = ref<string>("");
 
-const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
+const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 const usernameError = computed<string | null>(() => {
   const v = formUsername.value.trim();
   if (!v) return null;
-  if (!USERNAME_RE.test(v)) return "Only a–z, 0–9, underscore; 3–20 chars";
+  if (!USERNAME_RE.test(v)) return "Only letters, digits, underscore; 3-20 chars";
   return null;
 });
 
@@ -225,11 +225,10 @@ function copyPublicLink() {
 
 /* ----------------------- save profile ----------------------- */
 async function isUsernameTaken(uname: string, excludeId?: string) {
-  const u = uname.toLowerCase();
   const { data, error } = await supabase
     .from("profiles")
     .select("id")
-    .eq("username", u);
+    .ilike("username", uname.replace(/([\\%_])/g, "\\$1"));
   if (error) throw error;
   if (!data) return false;
   return data.some((r) => r.id !== excludeId);
@@ -246,7 +245,7 @@ async function saveProfile() {
   msg.value = null;
 
   const unameRaw = formUsername.value.trim();
-  const uname = unameRaw ? unameRaw.toLowerCase() : null;
+  const uname = unameRaw || null;
 
   if (uname && usernameError.value) {
     err.value = usernameError.value;
@@ -292,11 +291,11 @@ async function loadProfile() {
   err.value = null;
   try {
     if (isPublicView.value) {
-      const uname = usernameParam.value!.toLowerCase();
+      const uname = usernameParam.value!;
       const { data, error } = await supabase
         .from("profiles")
         .select("id, username, avatar_url, bio, created_at")
-        .eq("username", uname)
+        .ilike("username", uname.replace(/([\\%_])/g, "\\$1"))
         .maybeSingle();
       if (error) throw error;
       if (!data) {

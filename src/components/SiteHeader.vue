@@ -337,22 +337,39 @@ function toggleDrawer(){
 .nav-cta{
   @apply text-sm;
   border: 1px solid rgba(255,255,255,.14);
-  color: rgba(255,255,255,.92);
-  padding: .4rem .75rem;
-  border-radius: 9999px;
+  color: rgba(255,255,255,.94);
+  padding: .45rem .85rem;
+  border-radius: 12px;
   background:
-    radial-gradient(100% 80% at 20% -20%, rgba(255,255,255,.12) 0, rgba(255,255,255,0) 60%),
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    radial-gradient(120% 120% at 18% -20%, rgba(148,180,255,.10), rgba(148,180,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    inset 0 -1px 0 rgba(0,0,0,.34),
+    0 8px 18px rgba(0,0,0,.28);
   transition: border-color .18s ease, box-shadow .18s ease, background .18s ease, transform .12s ease;
 }
-.nav-cta:hover{ border-color: rgba(255,255,255,.22); box-shadow: 0 6px 18px rgba(0,0,0,.35); transform: translateY(-1px); }
+.nav-cta:hover{
+  border-color: rgba(148,180,255,.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.38),
+    0 12px 24px rgba(0,0,0,.34);
+  background:
+    radial-gradient(120% 120% at 18% -20%, rgba(148,180,255,.15), rgba(148,180,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  transform: translateY(-1px);
+}
 .nav-cta:active{ transform: translateY(0); }
 .nav-cta--accent{
-  border-color: rgba(160,120,255,.4);
+  border-color: rgba(148,180,255,.3);
   background:
-    radial-gradient(100% 80% at 20% -20%, rgba(160,120,255,.20) 0, rgba(160,120,255,0) 60%),
-    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
-  box-shadow: 0 4px 14px rgba(160,120,255,.18);
+    radial-gradient(120% 120% at 18% -20%, rgba(148,180,255,.18), rgba(148,180,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.34),
+    0 10px 22px rgba(0,0,0,.32);
 }
 .badge{
   display:inline-block;

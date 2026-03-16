@@ -5,11 +5,13 @@
       class="relative min-h-[100svh] flex items-center overflow-hidden will-reveal"
     >
       <div
-        class="absolute inset-0 bg-cover bg-center scale-105 brightness-[0.7] contrast-[1.15] saturate-[1.2] transition-transform duration-[4000ms] will-change-transform"
+        class="absolute inset-0 bg-cover bg-center scale-105 brightness-[0.72] contrast-[1.12] saturate-[1.15] transition-transform duration-[4000ms] will-change-transform"
+        style="background-image: url('/media/main-bg.png'); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.98) 48%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.35) 86%, transparent 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.98) 48%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.35) 86%, transparent 100%)"
       ></div>
 
-      <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/70 "></div>
-      <div class="absolute inset-0 mix-blend-screen bg-[radial-gradient(90%_90%_at_60%_20%,rgba(140,180,255,0.25),transparent_70%)]"></div>
+      <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/20"></div>
+      <div class="absolute inset-x-0 bottom-0 h-56 md:h-80 bg-gradient-to-t from-[#050608] via-[#050608]/85 to-transparent"></div>
+      <div class="absolute inset-0 mix-blend-screen "></div>
 
       <div class="relative z-10 section">
         <div class="max-w-4xl">
@@ -369,29 +371,48 @@ onBeforeUnmount(() => {
 }
 
 .glass-btn.comet {
-  @apply glass-base inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-medium text-white;
-    border-color: rgba(97, 225, 255, .35) !important;
-    color: rgba(255, 255, 255, .9) !important;
-    background: radial-gradient(100% 80% at 20% -20%, rgba(97, 225, 255, .20) 0, rgba(97, 225, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .04));
-    box-shadow: inset 0 .5px 0 rgba(255, 255, 255, .35), 0 3px 12px rgba(97, 225, 255, .12);
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  color: rgba(255,255,255,.94) !important;
+  background:
+    radial-gradient(130% 110% at 16% -22%, rgba(120,170,255,.14) 0%, rgba(120,170,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.018)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    inset 0 -1px 0 rgba(0,0,0,.34),
+    0 10px 24px rgba(0,0,0,.32) !important;
+  letter-spacing: .01em;
+  transition: transform 140ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
 
-
-
+.glass-btn.comet:hover {
+  transform: translateY(-1px);
+  border-color: rgba(148,180,255,.24) !important;
+  background:
+    radial-gradient(130% 110% at 16% -22%, rgba(120,170,255,.18) 0%, rgba(120,170,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.028)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.38),
+    0 14px 30px rgba(0,0,0,.36),
+    0 0 0 1px rgba(148,180,255,.06) !important;
 }
 
 .glass-btn.comet:active {
   transform: translateY(0);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.22),
-    0 6px 16px rgba(0,0,0,0.45);
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 -1px 0 rgba(0,0,0,.45),
+    0 6px 14px rgba(0,0,0,0.36) !important;
 }
 
 .glass-btn.comet:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 3px rgba(165,120,255,0.45),
-    0 0 0 6px rgba(165,120,255,0.15);
-  border-color: rgba(165,120,255,0.4);
+    0 0 0 3px rgba(148,180,255,0.22),
+    0 0 0 1px rgba(148,180,255,0.34) inset,
+    0 10px 24px rgba(0,0,0,.32) !important;
+  border-color: rgba(148,180,255,0.34) !important;
 }
 
 .glass-btn.comet[disabled] {
@@ -449,8 +470,7 @@ onBeforeUnmount(() => {
 .glass-btn.comet {
   position: relative;
   overflow: visible; /* glow может выходить за края */
-  border-radius: 22px;
-  padding: 8px 12px;
+  border-radius: 14px;
 }
 
 /* Яркая «голова» кометы — тонкий пробегающий штрих */
@@ -502,14 +522,14 @@ onBeforeUnmount(() => {
 .glass-btn.comet:hover::before,
 .glass-btn.comet:focus-visible::after,
 .glass-btn.comet:focus-visible::before {
-  opacity: 1;
-  animation: comet-rotate 1500ms linear infinite;
+  opacity: 0;
+  animation: none;
 }
 
 /* чуть быстрее при active */
 .glass-btn.comet:active::after,
 .glass-btn.comet:active::before {
-  animation-duration: 900ms;
+  animation: none;
 }
 
 @keyframes comet-rotate {
@@ -538,36 +558,38 @@ onBeforeUnmount(() => {
   cursor: default;
 
   /* цвет — как рамка кнопки */
-  color: rgba(255,255,255,.88);
-  border: 1px solid rgba(165,120,255,.7);
+  color: rgba(255,255,255,.86);
+  border: 1px solid rgba(255,255,255,.12);
   background:
-    radial-gradient(100% 180% at 50% 0%, rgba(165,120,255,.14), rgba(165,120,255,.04) 70%),
-    linear-gradient(180deg, rgba(15,25,35,.9), rgba(10,15,25,.9));
+    radial-gradient(120% 160% at 18% -20%, rgba(140,170,255,.10), rgba(140,170,255,0) 62%),
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.016));
   box-shadow:
-    inset 0 0 1px rgba(255,255,255,.08),
-    0 0 12px rgba(165,120,255,.12);
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -1px 0 rgba(0,0,0,.28);
 
   transition: color .2s ease, border-color .2s ease, background .2s ease;
 }
 
 /* немного «живее» при наведении */
 .glass-pill:hover {
-  border-color: rgba(165,120,255,.35);
+  border-color: rgba(148,180,255,.22);
   background:
-    radial-gradient(100% 180% at 50% 0%, rgba(165,120,255,.18), rgba(165,120,255,.06) 70%),
-    linear-gradient(180deg, rgba(20,30,40,.92), rgba(12,18,28,.92));
+    radial-gradient(120% 160% at 18% -20%, rgba(140,170,255,.14), rgba(140,170,255,0) 62%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
   box-shadow:
-    0 0 14px rgba(165,120,255,.18);
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 8px 16px rgba(0,0,0,.22);
 }
 
 /* можно добавить акцентный вариант */
 .glass-pill--accent {
-  border-color: rgba(165,120,255,.5);
+  border-color: rgba(148,180,255,.28);
   background:
-    radial-gradient(100% 180% at 50% 0%, rgba(165,120,255,.25), rgba(165,120,255,.08) 70%),
-    linear-gradient(180deg, rgba(25,45,55,.95), rgba(15,20,25,.95));
+    radial-gradient(120% 160% at 18% -20%, rgba(148,180,255,.20), rgba(148,180,255,0) 62%),
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
   box-shadow:
-    0 0 18px rgba(165,120,255,.25);
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 10px 20px rgba(0,0,0,.24);
 }
 
 

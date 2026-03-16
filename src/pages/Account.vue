@@ -346,7 +346,7 @@ async function saveProfile() {
   err.value = null;
   pending.value = true;
   try {
-    const uname = (form.username || "").trim().toLowerCase();
+    const uname = (form.username || "").trim();
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(uname)) {
       throw new Error("Username: 3–20 letters, digits or _");
     }
@@ -354,7 +354,7 @@ async function saveProfile() {
     const { data: existing, error: existsErr } = await supabase
       .from("profiles")
       .select("id")
-      .eq("username", uname)
+      .ilike("username", uname.replace(/([\\%_])/g, "\\$1"))
       .maybeSingle();
     if (existsErr && existsErr.code !== "PGRST116") throw existsErr;
     if (existing?.id && existing.id !== currentId) {
