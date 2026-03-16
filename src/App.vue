@@ -1,14 +1,21 @@
 <template>
   <div>
-    <!-- Фон three.js -->
+    <div v-if="portalJumpActive" class="portal-jump-overlay" aria-hidden="true">
+      <div class="portal-jump-bg"></div>
+      <div class="portal-jump-ring ring-a"></div>
+      <div class="portal-jump-ring ring-b"></div>
+      <div class="portal-jump-core"></div>
+      <div class="portal-jump-streaks"></div>
+    </div>
+
     <canvas
       ref="bgCanvas"
       class="fixed inset-0 z-0 w-full h-full pointer-events-none"
     ></canvas>
 
-    <!-- Весь контент поверх -->
-    <div class="relative z-10 bg-02 min-h100">
-      <!-- Global Header -->
+
+    <div class="relative z-10 min-h100">
+
       <SiteHeader
         :isAuthed="isAuthed"
         @signin="openAuth('signin')"
@@ -18,7 +25,6 @@
 
       <RouterView />
 
-      <!-- Auth Modal -->
       <Transition name="modal-fade" appear>
         <div v-if="authOpen" class="fixed inset-0 z-30 grid place-items-center bg-black/60">
           <div class="card w-[92vw] max-w-md p-6 md:p-8 relative auth-card">
@@ -140,12 +146,13 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { initNebula, type NebulaHandle } from './lib/nebula'
 import SiteHeader from './components/SiteHeader.vue'
 import { useAuth } from './composables/useAuth'
 import UiPopup from './components/UiPopup.vue'
 import UiSpinner from './components/UiSpinner.vue'
 import { supabase } from './lib/superbase'
+import type { NebulaHandle } from './lib/nebula'
+import { portalJumpActive } from './lib/portalTransition'
 
 const router = useRouter()
 
@@ -186,36 +193,52 @@ function tickBoost() {
 
 const bgCanvas = ref<HTMLCanvasElement | null>(null)
 let nebula: NebulaHandle | null = null
+let nebulaLoadCancelled = false
+let authStateSub: { unsubscribe: () => void } | null = null
+
+function runWhenIdle(cb: () => void) {
+  const ric = (window as Window & {
+    requestIdleCallback?: (callback: () => void) => number
+  }).requestIdleCallback
+  if (ric) {
+    ric(cb)
+    return
+  }
+  window.setTimeout(cb, 120)
+}
+
+async function initNebulaLazy() {
+  if (!bgCanvas.value || nebulaLoadCancelled || nebula) return
+  const { initNebula } = await import('./lib/nebula')
+  if (!bgCanvas.value || nebulaLoadCancelled || nebula) return
+  nebula = initNebula(bgCanvas.value)
+  nebula?.setMouseEnabled(false)
+}
+
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') closeAuth()
 }
 onMounted(() => {
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('keydown', onKey)
-  if (bgCanvas.value) nebula = initNebula(bgCanvas.value)
-  nebula?.setMouseEnabled(false)
+  runWhenIdle(() => { void initNebulaLazy() })
 
   const { data: sub } = supabase.auth.onAuthStateChange((event) => {
     if (event === 'SIGNED_IN') {
       authOpen.value = false
       // сюда можно добавить тост «Welcome back»
-      window.history.replaceState({}, '', window.location.pathname + window.location.search)
-      // перенаправим в аккаунт (или по своему роутингу)
-      if (window.location.pathname === '/' || window.location.pathname === '/login') {
-        window.location.assign('/account')
-      }
     }
     if (event === 'PASSWORD_RECOVERY') {
       window.location.assign('/reset')
     }
   })
-
-  // если делаешь dispose:
-  onBeforeUnmount(() => { sub?.subscription.unsubscribe() })
+  authStateSub = sub?.subscription ?? null
 })
 
 
 onBeforeUnmount(() => {
+  nebulaLoadCancelled = true
+  authStateSub?.unsubscribe()
   cancelAnimationFrame(rafBoost)
   window.removeEventListener('mousemove', onMouse)
   window.removeEventListener('touchmove', onTouch)
@@ -279,15 +302,16 @@ async function onSubmit() {
     if (mode.value === 'signin') {
       await signIn(form.email, form.password)
       authOpen.value = false
+      router.push('/account')
       return
     }
 
-    const uname = form.username.trim().toLowerCase()
+    const uname = form.username.trim()
 
     const { data: existing, error: existsErr } = await supabase
       .from('profiles')
       .select('id')
-      .eq('username', uname)
+      .ilike('username', uname.replace(/([\\%_])/g, '\\$1'))
       .maybeSingle()
 
     if (existsErr?.code === 'PGRST205') {
@@ -314,6 +338,7 @@ async function onSubmit() {
     }
 
     authOpen.value = false
+    router.push('/account')
   } catch (e: any) {
     submitError.value = e?.message ?? 'Auth error'
   } finally {
@@ -370,5 +395,111 @@ async function logout() {
   }
 }
 </script>
+
+<style scoped>
+.portal-jump-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 52%, rgba(16, 13, 31, 0.45), rgba(4, 5, 10, 0.98) 72%);
+}
+
+.portal-jump-bg {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(circle at 50% 52%, rgba(220, 146, 255, 0.36), rgba(95, 144, 255, 0.24) 22%, rgba(0, 0, 0, 0) 50%),
+    radial-gradient(circle at 50% 52%, rgba(201, 122, 255, 0.6), rgba(201, 122, 255, 0) 34%);
+  filter: blur(16px);
+  animation: jumpZoom 920ms cubic-bezier(.18,.74,.32,1) both;
+}
+
+.portal-jump-core {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 220px;
+  height: 280px;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background:
+    radial-gradient(58% 65% at 50% 46%, rgba(244, 192, 255, 0.95), rgba(188, 106, 255, 0.64) 42%, rgba(89, 148, 255, 0.26) 72%, rgba(0, 0, 0, 0) 100%);
+  box-shadow:
+    0 0 52px rgba(206, 110, 255, 0.8),
+    0 0 108px rgba(106, 160, 255, 0.34);
+  animation: coreDive 920ms cubic-bezier(.18,.74,.32,1) both;
+}
+
+.portal-jump-ring {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  border: 1px solid rgba(232, 170, 255, 0.65);
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+}
+
+.ring-a {
+  width: 290px;
+  height: 350px;
+  animation: ringPulse 920ms ease-out both;
+}
+
+.ring-b {
+  width: 360px;
+  height: 430px;
+  border-color: rgba(133, 186, 255, 0.46);
+  animation: ringPulse 920ms ease-out both;
+  animation-delay: 80ms;
+}
+
+.portal-jump-streaks {
+  position: absolute;
+  inset: -30%;
+  background: repeating-conic-gradient(
+    from 0deg at 50% 52%,
+    rgba(233, 176, 255, 0.18) 0deg 3deg,
+    rgba(129, 177, 255, 0.14) 3deg 6deg,
+    rgba(0, 0, 0, 0) 6deg 14deg
+  );
+  filter: blur(1px);
+  animation: streaksDive 920ms ease-in both;
+}
+
+@keyframes jumpZoom {
+  0% { opacity: 0; transform: scale(0.8); }
+  22% { opacity: 1; }
+  100% { opacity: 1; transform: scale(1.9); }
+}
+
+@keyframes coreDive {
+  0% { transform: translate(-50%, -50%) scale(.42); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(6.4); opacity: 0.06; }
+}
+
+@keyframes ringPulse {
+  0% { transform: translate(-50%, -50%) scale(.45); opacity: 0; }
+  24% { opacity: .9; }
+  100% { transform: translate(-50%, -50%) scale(7); opacity: 0; }
+}
+
+@keyframes streaksDive {
+  0% { transform: scale(.88) rotate(0deg); opacity: 0; }
+  20% { opacity: .82; }
+  100% { transform: scale(1.55) rotate(16deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-jump-bg,
+  .portal-jump-core,
+  .portal-jump-ring,
+  .portal-jump-streaks {
+    animation: none !important;
+  }
+}
+</style>
 
 

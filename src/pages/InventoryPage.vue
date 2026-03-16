@@ -41,7 +41,13 @@ type ItemRow = {
     rarity: 'common'|'uncommon'|'rare'|'epic'|'legendary'
     icon_url: string
     meta: Record<string, unknown>
-  }
+  } | {
+    id: string
+    name: string
+    rarity: 'common'|'uncommon'|'rare'|'epic'|'legendary'
+    icon_url: string
+    meta: Record<string, unknown>
+  }[] | null
   acquired_at: string
 }
 
@@ -52,14 +58,20 @@ const rows = ref<ItemRow[]>([])
 const isAuthed = computed(() => !!userId.value)
 
 const items = computed(() =>
-  rows.value.map(r => ({
-    key: `${r.items.id}-${r.acquired_at}`,
-    id: r.items.id,
-    name: r.items.name,
-    rarity: r.items.rarity,
-    icon_url: r.items.icon_url,
-    acquired_at: r.acquired_at
-  }))
+  rows.value
+    .map(r => {
+      const item = Array.isArray(r.items) ? r.items[0] : r.items
+      if (!item) return null
+      return {
+        key: `${item.id}-${r.acquired_at}`,
+        id: item.id,
+        name: item.name,
+        rarity: item.rarity,
+        icon_url: item.icon_url,
+        acquired_at: r.acquired_at
+      }
+    })
+    .filter((it): it is NonNullable<typeof it> => Boolean(it))
 )
 
 type Rarity = 'common'|'uncommon'|'rare'|'epic'|'legendary'
@@ -97,7 +109,7 @@ onMounted(async () => {
     .order('acquired_at', { ascending: false })
 
   if (!error && data) {
-    rows.value = data as ItemRow[]
+    rows.value = data as unknown as ItemRow[]
   }
   loading.value = false
 })

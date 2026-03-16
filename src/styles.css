@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -9,9 +9,22 @@ html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto; }
 .lenis.lenis-stopped { overflow: hidden; }
 [data-lenis-prevent] { overscroll-behavior: contain; }
+html:not(.lenis) { scroll-behavior: smooth; }
 
-/* убираем горизонтальный скролл от эффектов */
+/* СѓР±РёСЂР°РµРј РіРѕСЂРёР·РѕРЅС‚Р°Р»СЊРЅС‹Р№ СЃРєСЂРѕР»Р» РѕС‚ СЌС„С„РµРєС‚РѕРІ */
 html, body { overflow-x: hidden; }
+
+button,
+button:focus,
+button:focus-visible,
+button:active {
+  outline: none !important;
+}
+
+button:focus,
+button:focus-visible {
+  box-shadow: none !important;
+}
 
 .section { @apply relative w-full max-w-6xl mx-auto px-6 md:px-10; }
 h1, h2, h3 { letter-spacing: -0.02em; }
@@ -22,14 +35,42 @@ h1, h2, h3 { letter-spacing: -0.02em; }
   width: 40rem;
   height: 40rem;
   filter: blur(120px);
-  background: radial-gradient(45% 45% at 50% 50%, rgba(148,180,255,0.25) 0%, rgba(122,162,255,0.08) 40%, rgba(10,11,15,0) 70%);
+  background: radial-gradient(45% 45% at 50% 50%, rgba(148,180,255,0.25) 0%, rgba(182,98,255,0.1) 40%, rgba(10,11,15,0) 70%);
   pointer-events: none;
 }
 
 a.cta {
-  @apply inline-flex items-center gap-2 rounded-2xl px-6 py-3 bg-eter-accent/20 text-eter-text hover:bg-eter-accent/30 transition shadow-soft font-semibold;
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(122,162,255,0.35);
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 transition font-semibold;
+  color: rgba(255,255,255,.94);
+  border: 1px solid rgba(220,150,255,.46);
+  background:
+    radial-gradient(130% 130% at 18% -20%, rgba(206,110,255,.42), rgba(206,110,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(0,0,0,.35),
+    0 10px 24px rgba(0,0,0,.34),
+    0 0 0 1px rgba(206,110,255,.22);
+  backdrop-filter: blur(10px);
+}
+a.cta:hover {
+  border-color: rgba(230,150,255,.68);
+  background:
+    radial-gradient(130% 130% at 18% -20%, rgba(218,126,255,.56), rgba(218,126,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -1px 0 rgba(0,0,0,.4),
+    0 14px 32px rgba(0,0,0,.4),
+    0 0 0 1px rgba(226,136,255,.34),
+    0 0 24px rgba(206,110,255,.32);
+}
+a.cta:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(186,96,255,.32),
+    0 0 0 1px rgba(186,96,255,.44) inset,
+    0 10px 24px rgba(0,0,0,.3);
 }
 
 .card {
@@ -39,7 +80,7 @@ a.cta {
 }
 
 
-/* scroll hint (если понадобится, сейчас не используем) */
+/* scroll hint (РµСЃР»Рё РїРѕРЅР°РґРѕР±РёС‚СЃСЏ, СЃРµР№С‡Р°СЃ РЅРµ РёСЃРїРѕР»СЊР·СѓРµРј) */
 .scroll-indicator{
   position: absolute;
   left: 50%; bottom: 1.25rem;
@@ -56,7 +97,7 @@ a.cta {
 }
 
 /* --- SAFE REVEAL --- */
-/* Важно: прячем только если на <html> есть класс .js */
+/* Р’Р°Р¶РЅРѕ: РїСЂСЏС‡РµРј С‚РѕР»СЊРєРѕ РµСЃР»Рё РЅР° <html> РµСЃС‚СЊ РєР»Р°СЃСЃ .js */
 .js .will-reveal {
   opacity: 0;
   transform: translateY(16px);
@@ -67,7 +108,7 @@ a.cta {
   transform: translateY(0);
 }
 .bg-02{
-      background: rgba(0, 0, 0, 0.2);
+      background: radial-gradient(120% 90% at 50% -10%, rgba(186,96,255,0.16), rgba(8,6,14,0.92));
 }
 
 .glass-base {
@@ -90,7 +131,7 @@ a.cta {
   pointer-events: none;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 40%) top left / 100% 50% no-repeat,
-    radial-gradient(60% 40% at 80% 0%, rgba(165,120,255,0.22), rgba(158,124,255,0) 60%);
+    radial-gradient(60% 40% at 80% 0%, rgba(206,106,255,0.3), rgba(158,124,255,0) 60%);
   opacity: 0.75;
   mix-blend-mode: screen;
 }
@@ -104,32 +145,32 @@ a.cta {
     0 3px 10px rgba(0,0,0,0.35);
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
-/* Реалистичная стеклянная карточка */
+/* Р РµР°Р»РёСЃС‚РёС‡РЅР°СЏ СЃС‚РµРєР»СЏРЅРЅР°СЏ РєР°СЂС‚РѕС‡РєР° */
 .glass-card {
   position: relative;
   border-radius: 1.25rem;              /* 20px */
   overflow: hidden;
 
-  /* градиентный бордер через двойной бэкграунд */
+  /* РіСЂР°РґРёРµРЅС‚РЅС‹Р№ Р±РѕСЂРґРµСЂ С‡РµСЂРµР· РґРІРѕР№РЅРѕР№ Р±СЌРєРіСЂР°СѓРЅРґ */
   border: 1px solid transparent;
   background:
-    linear-gradient(to bottom, rgba(255,255,255,0.28), rgba(255,255,255,0.04)) border-box,  /* бордер-блик */
-    radial-gradient(120% 180% at 50% -20%, rgba(255,255,255,0.38), rgba(255,255,255,0) 55%) padding-box, /* верхний «свет» */
-    linear-gradient(180deg, rgba(24,26,34,0.55), rgba(24,26,34,0.35) 45%, rgba(10,10,12,0.55) 100%) padding-box; /* стеклянная масса */
+    linear-gradient(to bottom, rgba(255,255,255,0.28), rgba(255,255,255,0.04)) border-box,  /* Р±РѕСЂРґРµСЂ-Р±Р»РёРє */
+    radial-gradient(120% 180% at 50% -20%, rgba(255,255,255,0.38), rgba(255,255,255,0) 55%) padding-box, /* РІРµСЂС…РЅРёР№ В«СЃРІРµС‚В» */
+    linear-gradient(180deg, rgba(24,26,34,0.55), rgba(24,26,34,0.35) 45%, rgba(10,10,12,0.55) 100%) padding-box; /* СЃС‚РµРєР»СЏРЅРЅР°СЏ РјР°СЃСЃР° */
 
   backdrop-filter: blur(18px) saturate(1.35) contrast(1.05);
   -webkit-backdrop-filter: blur(18px) saturate(1.35) contrast(1.05);
 
-  /* глубина и внутренняя тень снизу */
+  /* РіР»СѓР±РёРЅР° Рё РІРЅСѓС‚СЂРµРЅРЅСЏСЏ С‚РµРЅСЊ СЃРЅРёР·Сѓ */
   box-shadow:
-    inset 0 0.5px 0 rgba(255,255,255,0.45),       /* тонкий верхний кант */
-    inset 0 -1px 0 rgba(0,0,0,0.35),              /* нижний кант */
-    0 24px 80px rgba(0,0,0,0.55),                 /* большая тень */
-    0 8px 28px rgba(0,0,0,0.40);                  /* ближняя тень */
+    inset 0 0.5px 0 rgba(255,255,255,0.45),       /* С‚РѕРЅРєРёР№ РІРµСЂС…РЅРёР№ РєР°РЅС‚ */
+    inset 0 -1px 0 rgba(0,0,0,0.35),              /* РЅРёР¶РЅРёР№ РєР°РЅС‚ */
+    0 24px 80px rgba(0,0,0,0.55),                 /* Р±РѕР»СЊС€Р°СЏ С‚РµРЅСЊ */
+    0 8px 28px rgba(0,0,0,0.40);                  /* Р±Р»РёР¶РЅСЏСЏ С‚РµРЅСЊ */
   color: rgba(255,255,255,0.92);
 }
 
-/* верхний бликовый слой + холодный оттенок */
+/* РІРµСЂС…РЅРёР№ Р±Р»РёРєРѕРІС‹Р№ СЃР»РѕР№ + С…РѕР»РѕРґРЅС‹Р№ РѕС‚С‚РµРЅРѕРє */
 .glass-card::before {
   content: "";
   position: absolute;
@@ -138,12 +179,12 @@ a.cta {
   border-radius: inherit;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0) 42%) top/100% 60% no-repeat,
-    radial-gradient(70% 40% at 80% -10%, rgba(120,210,255,0.35), rgba(120,210,255,0) 60%);
+    radial-gradient(70% 40% at 80% -10%, rgba(224,118,255,0.42), rgba(120,210,255,0) 60%);
   mix-blend-mode: screen;
   opacity: .85;
 }
 
-/* лёгкий внутренний виньет + микро-зерно, без base64 */
+/* Р»С‘РіРєРёР№ РІРЅСѓС‚СЂРµРЅРЅРёР№ РІРёРЅСЊРµС‚ + РјРёРєСЂРѕ-Р·РµСЂРЅРѕ, Р±РµР· base64 */
 .glass-card::after {
   content: "";
   position: absolute;
@@ -153,10 +194,10 @@ a.cta {
   background:
     radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,0.28), transparent 60%),
     repeating-linear-gradient(45deg, rgba(255,255,255,0.012) 0 2px, rgba(255,255,255,0) 2px 4px);
-  opacity: .22; /* зерно еле заметно */
+  opacity: .22; /* Р·РµСЂРЅРѕ РµР»Рµ Р·Р°РјРµС‚РЅРѕ */
 }
 
-/* ховер — чуть больше «глубины» и светлее кант */
+/* С…РѕРІРµСЂ вЂ” С‡СѓС‚СЊ Р±РѕР»СЊС€Рµ В«РіР»СѓР±РёРЅС‹В» Рё СЃРІРµС‚Р»РµРµ РєР°РЅС‚ */
 .glass-card:hover {
   transform: translateY(-1px);
   border-color: rgba(255,255,255,0.22);
@@ -173,29 +214,49 @@ a.cta {
 }
 
 .glass-btn.comet {
-  @apply glass-base inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-medium text-white;
-    border-color: rgba(97, 225, 255, .35) !important;
-    color: rgba(255, 255, 255, .9) !important;
-    background: radial-gradient(100% 80% at 20% -20%, rgba(97, 225, 255, .20) 0, rgba(97, 225, 255, 0) 60%), linear-gradient(180deg, rgba(255, 255, 255, .10), rgba(255, 255, 255, .04));
-    box-shadow: inset 0 .5px 0 rgba(255, 255, 255, .35), 0 3px 12px rgba(97, 225, 255, .12);
-
-
-
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium;
+  border: 1px solid rgba(220,150,255,.5) !important;
+  color: rgba(255,255,255,.94) !important;
+  background:
+    radial-gradient(130% 110% at 16% -22%, rgba(206,110,255,.44) 0%, rgba(120,170,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.03)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -1px 0 rgba(0,0,0,.34),
+    0 10px 24px rgba(0,0,0,.36) !important,
+    0 0 0 1px rgba(206,110,255,.22) !important;
+  letter-spacing: .01em;
+  transition: transform 140ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+.glass-btn.comet:hover {
+  transform: translateY(-1px);
+  border-color: rgba(232,152,255,.7) !important;
+  background:
+    radial-gradient(130% 110% at 16% -22%, rgba(218,126,255,.58) 0%, rgba(120,170,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.05)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.24),
+    inset 0 -1px 0 rgba(0,0,0,.38),
+    0 16px 34px rgba(0,0,0,.42),
+    0 0 0 1px rgba(230,146,255,.34) !important,
+    0 0 28px rgba(206,110,255,.34) !important;
 }
 
 .glass-btn.comet:active {
   transform: translateY(0);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.22),
-    0 6px 16px rgba(0,0,0,0.45);
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 -1px 0 rgba(0,0,0,.45),
+    0 6px 14px rgba(0,0,0,0.36) !important;
 }
 
 .glass-btn.comet:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 3px rgba(165,120,255,0.45),
-    0 0 0 6px rgba(165,120,255,0.15);
-  border-color: rgba(165,120,255,0.4);
+    0 0 0 3px rgba(186,96,255,0.34),
+    0 0 0 1px rgba(186,96,255,0.5) inset,
+    0 10px 24px rgba(0,0,0,.32) !important;
+  border-color: rgba(186,96,255,0.5) !important;
 }
 
 .glass-btn.comet[disabled] {
@@ -212,12 +273,12 @@ a.cta {
   .glass-base { transition: none; }
   .glass-base:hover { transform: none; }
 }
-/* Делает карточку визуально такой же, как glass-btn  comet / glass-pill */
+/* Р”РµР»Р°РµС‚ РєР°СЂС‚РѕС‡РєСѓ РІРёР·СѓР°Р»СЊРЅРѕ С‚Р°РєРѕР№ Р¶Рµ, РєР°Рє glass-btn  comet / glass-pill */
 .glass-panel {
   @apply border border-white/15 text-white/90 backdrop-blur-2xl rounded-3xl;
-  /* тот же стеклянный фон, что у .glass-base */
+  /* С‚РѕС‚ Р¶Рµ СЃС‚РµРєР»СЏРЅРЅС‹Р№ С„РѕРЅ, С‡С‚Рѕ Сѓ .glass-base */
   background:
-    radial-gradient(120% 80% at 15% -10%, rgba(165,120,255,0.26) 0%, rgba(165,120,255,0) 46%),
+    radial-gradient(120% 80% at 15% -10%, rgba(206,106,255,0.34) 0%, rgba(165,120,255,0) 46%),
     linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05)) !important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.28),
@@ -227,13 +288,13 @@ a.cta {
   --tw-backdrop-blur: blur(0px);
 }
 
-/* убираем «доп. слои» из базовой glass-card */
+/* СѓР±РёСЂР°РµРј В«РґРѕРї. СЃР»РѕРёВ» РёР· Р±Р°Р·РѕРІРѕР№ glass-card */
 .glass-panel::before,
 .glass-panel::after {
   content: none !important;
 }
 
-/* такой же hover, как у кнопок/пилюль */
+/* С‚Р°РєРѕР№ Р¶Рµ hover, РєР°Рє Сѓ РєРЅРѕРїРѕРє/РїРёР»СЋР»СЊ */
 .glass-panel:hover {
   transform: translateY(-1px);
   border-color: rgba(255,255,255,0.22);
@@ -244,7 +305,7 @@ a.cta {
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
-/* ===== Комета по бордеру для .glass-btn ===== */
+/* ===== РљРѕРјРµС‚Р° РїРѕ Р±РѕСЂРґРµСЂСѓ РґР»СЏ .glass-btn ===== */
 @property --angle {
   syntax: "<angle>";
   inherits: false;
@@ -253,27 +314,26 @@ a.cta {
 
 .glass-btn.comet {
   position: relative;
-  overflow: visible; /* glow может выходить за края */
-  border-radius: 22px;
-  padding: 8px 12px;
+  overflow: visible; /* glow РјРѕР¶РµС‚ РІС‹С…РѕРґРёС‚СЊ Р·Р° РєСЂР°СЏ */
+  border-radius: 14px;
 }
 
 
-/* Яркая «голова» кометы — тонкий пробегающий штрих */
+/* РЇСЂРєР°СЏ В«РіРѕР»РѕРІР°В» РєРѕРјРµС‚С‹ вЂ” С‚РѕРЅРєРёР№ РїСЂРѕР±РµРіР°СЋС‰РёР№ С€С‚СЂРёС… */
 .glass-btn.comet::after {
   content: "";
   position: absolute;
-  inset: -2px;                 /* толщина неон-строки */
+  inset: -2px;                 /* С‚РѕР»С‰РёРЅР° РЅРµРѕРЅ-СЃС‚СЂРѕРєРё */
   border-radius: inherit;
-  padding: 2px;                /* толщина обводки */
+  padding: 2px;                /* С‚РѕР»С‰РёРЅР° РѕР±РІРѕРґРєРё */
   background:
     conic-gradient(
       from var(--angle),
       transparent 0deg 330deg,
-      rgba(165,120,255,0.95) 345deg,
+      rgba(206,106,255,1) 345deg,
       rgba(165,120,255,0.15) 360deg
     );
-  /* показываем только рамку (вырезаем внутренность) */
+  /* РїРѕРєР°Р·С‹РІР°РµРј С‚РѕР»СЊРєРѕ СЂР°РјРєСѓ (РІС‹СЂРµР·Р°РµРј РІРЅСѓС‚СЂРµРЅРЅРѕСЃС‚СЊ) */
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -285,17 +345,17 @@ a.cta {
   pointer-events: none;
 }
 
-/* Мягкое свечение-хвост вокруг рамки */
+/* РњСЏРіРєРѕРµ СЃРІРµС‡РµРЅРёРµ-С…РІРѕСЃС‚ РІРѕРєСЂСѓРі СЂР°РјРєРё */
 .glass-btn.comet::before {
   content: "";
   position: absolute;
-  inset: -6px;                 /* ширина внешнего сияния */
+  inset: -6px;                 /* С€РёСЂРёРЅР° РІРЅРµС€РЅРµРіРѕ СЃРёСЏРЅРёСЏ */
   border-radius: inherit;
   background:
     conic-gradient(
       from calc(var(--angle) - 8deg),
       transparent 0deg 330deg,
-      rgba(165,120,255,0.55) 350deg,
+      rgba(206,106,255,0.62) 350deg,
       rgba(165,120,255,0.0) 360deg
     );
   filter: blur(8px);
@@ -309,25 +369,24 @@ a.cta {
 .glass-btn.comet:focus-visible::after,
 .glass-btn.comet:focus-visible::before,
 .glass-btn.comet-active::after,
-.glass-btn.comet-active::before,comet-active {
-  opacity: 1;
-  animation: comet-rotate 1500ms linear infinite;
+.glass-btn.comet-active::before {
+  opacity: 0;
+  animation: none;
 }
 
-/* чуть быстрее при active */
+/* С‡СѓС‚СЊ Р±С‹СЃС‚СЂРµРµ РїСЂРё active */
 .glass-btn.comet:active::after,
 .glass-btn.comet:active::before,
 .glass-btn.comet-active:active::after,
-.glass-btn.comet-active:active::before,
-{
-  animation-duration: 900ms;
+.glass-btn.comet-active:active::before {
+  animation: none;
 }
 
 @keyframes comet-rotate {
   to { --angle: 360deg; }
 }
 
-/* a11y: если пользователь просит меньше анимации — отключаем бегущую комету */
+/* a11y: РµСЃР»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїСЂРѕСЃРёС‚ РјРµРЅСЊС€Рµ Р°РЅРёРјР°С†РёРё вЂ” РѕС‚РєР»СЋС‡Р°РµРј Р±РµРіСѓС‰СѓСЋ РєРѕРјРµС‚Сѓ */
 @media (prefers-reduced-motion: reduce) {
   .glass-btn.comet::before,
   .glass-btn.comet::after {
@@ -339,46 +398,42 @@ a.cta {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: .45rem;
-  padding: .28rem .7rem;
+  gap: .35rem;
+  padding: .18rem .58rem;
   border-radius: 9999px;
-  font-weight: 600;
-  font-size: .8125rem;
-  line-height: 1.1;
-  letter-spacing: .01em;
+  font-weight: 550;
+  font-size: .76rem;
+  line-height: 1;
+  letter-spacing: .005em;
   cursor: default;
 
-  /* цвет — как рамка кнопки */
-  color: rgba(255,255,255,.88);
-  border: 1px solid rgba(165,120,255,.7);
+  /* С†РІРµС‚ вЂ” РєР°Рє СЂР°РјРєР° РєРЅРѕРїРєРё */
+  color: rgba(255,255,255,.86);
+  border: 1px solid rgba(255,255,255,.16);
   background:
-    radial-gradient(100% 180% at 50% 0%, rgba(165,120,255,.14), rgba(165,120,255,.04) 70%),
-    linear-gradient(180deg, rgba(15,25,35,.9), rgba(10,15,25,.9));
-  box-shadow:
-    inset 0 0 1px rgba(255,255,255,.08),
-    0 0 12px rgba(165,120,255,.12);
+    radial-gradient(120% 150% at 18% -40%, rgba(186,96,255,.14), rgba(186,96,255,0) 68%),
+    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
 
-  transition: color .2s ease, border-color .2s ease, background .2s ease;
+  transition: color .16s ease, border-color .16s ease, background .16s ease;
 }
 
-/* немного «живее» при наведении */
+/* РЅРµРјРЅРѕРіРѕ В«Р¶РёРІРµРµВ» РїСЂРё РЅР°РІРµРґРµРЅРёРё */
 .glass-pill:hover {
-  border-color: rgba(165,120,255,.35);
+  border-color: rgba(186,96,255,.4);
   background:
-    radial-gradient(100% 180% at 50% 0%, rgba(165,120,255,.18), rgba(165,120,255,.06) 70%),
-    linear-gradient(180deg, rgba(20,30,40,.92), rgba(12,18,28,.92));
-  box-shadow:
-    0 0 14px rgba(165,120,255,.18);
+    radial-gradient(120% 150% at 18% -40%, rgba(186,96,255,.2), rgba(186,96,255,0) 68%),
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
 }
 
-/* можно добавить акцентный вариант */
+/* РјРѕР¶РЅРѕ РґРѕР±Р°РІРёС‚СЊ Р°РєС†РµРЅС‚РЅС‹Р№ РІР°СЂРёР°РЅС‚ */
 .glass-pill--accent {
-  border-color: rgba(165,120,255,.5);
+  border-color: rgba(186,96,255,.4);
   background:
-    radial-gradient(100% 180% at 50% 0%, rgba(165,120,255,.25), rgba(165,120,255,.08) 70%),
-    linear-gradient(180deg, rgba(25,45,55,.95), rgba(15,20,25,.95));
-  box-shadow:
-    0 0 18px rgba(165,120,255,.25);
+    radial-gradient(120% 150% at 18% -40%, rgba(186,96,255,.24), rgba(186,96,255,0) 68%),
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
 }
 
 
@@ -393,7 +448,7 @@ a.cta {
   transition: opacity .22s ease;
 }
 
-/* Въезд карты */
+/* Р’СЉРµР·Рґ РєР°СЂС‚С‹ */
 .auth-card {
   transform:  scale(.98);
 
@@ -409,7 +464,161 @@ a.cta {
   opacity: 0;
 }
 
-/* ===== Tab swap (между Sign in / Sign up) ===== */
+/* Auth modal redesign */
+.auth-card {
+  width: min(540px, 92vw) !important;
+  border-radius: 20px !important;
+  padding: .85rem .9rem .9rem !important;
+  border: 1px solid rgba(206,106,255,.34) !important;
+  background:
+    radial-gradient(120% 90% at 5% -15%, rgba(196,106,255,.28), rgba(196,106,255,0) 55%),
+    radial-gradient(120% 80% at 100% 0%, rgba(86,26,140,.33), rgba(86,26,140,0) 60%),
+    linear-gradient(180deg, rgba(10,8,22,.96), rgba(8,7,18,.96)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.14),
+    0 28px 72px rgba(0,0,0,.62),
+    0 0 0 1px rgba(174,88,255,.18) !important;
+}
+
+.auth-card > button.absolute {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.03);
+  color: rgba(255,255,255,.72) !important;
+  display: grid;
+  place-items: center;
+  right: .8rem;
+  top: .8rem;
+}
+
+.auth-card > button.absolute:hover {
+  color: #fff !important;
+  border-color: rgba(206,106,255,.48);
+  background: rgba(206,106,255,.13);
+}
+
+.auth-card > .flex.items-center.gap-3.mb-6 {
+  gap: .45rem;
+  margin: .1rem 3.2rem .7rem 0;
+  padding: .25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.03);
+}
+
+.auth-card > .flex.items-center.gap-3.mb-6 > button {
+  flex: 1;
+  min-height: 34px;
+  padding: .35rem .5rem !important;
+  font-size: .9rem;
+  line-height: 1;
+  border-radius: 9px !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  font-weight: 650;
+}
+
+.auth-card > .flex.items-center.gap-3.mb-6 > button.comet-active {
+  border-color: rgba(206,106,255,.48) !important;
+  background:
+    radial-gradient(120% 120% at 10% -15%, rgba(196,106,255,.28), rgba(196,106,255,0) 56%),
+    linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.03)) !important;
+}
+
+.auth-card form.space-y-4 {
+  display: grid;
+  gap: .58rem;
+}
+
+.auth-card form.space-y-4 label.block.text-sm.mb-1 {
+  margin-bottom: .24rem;
+  color: rgba(255,255,255,.9);
+  font-size: .9rem;
+}
+
+.auth-card form.space-y-4 input[type="text"],
+.auth-card form.space-y-4 input[type="email"],
+.auth-card form.space-y-4 input[type="password"] {
+  border-radius: 12px !important;
+  border-color: rgba(255,255,255,.14) !important;
+  color: rgba(255,255,255,.96) !important;
+  padding: .62rem .82rem !important;
+  font-size: .9rem !important;
+  background:
+    radial-gradient(130% 120% at 0% 0%, rgba(189,104,255,.16), rgba(189,104,255,0) 58%),
+    rgba(255,255,255,.03) !important;
+}
+
+.auth-card form.space-y-4 input::placeholder {
+  color: rgba(255,255,255,.44);
+}
+
+/* Keep auth inputs dark when browser autofill is applied */
+.auth-card form.space-y-4 input:-webkit-autofill,
+.auth-card form.space-y-4 input:-webkit-autofill:hover,
+.auth-card form.space-y-4 input:-webkit-autofill:focus,
+.auth-card form.space-y-4 input:-webkit-autofill:active {
+  -webkit-text-fill-color: rgba(255,255,255,.96) !important;
+  box-shadow:
+    0 0 0 1000px rgba(255,255,255,.03) inset,
+    0 0 0 1px rgba(255,255,255,.14) inset !important;
+  -webkit-box-shadow:
+    0 0 0 1000px rgba(255,255,255,.03) inset,
+    0 0 0 1px rgba(255,255,255,.14) inset !important;
+  transition: background-color 9999s ease-out 0s;
+  caret-color: rgba(255,255,255,.96);
+}
+
+.auth-card form.space-y-4 .cta {
+  min-height: 34px;
+  border-radius: 10px;
+  padding: .35rem .65rem !important;
+  font-size: .8rem !important;
+  line-height: 1 !important;
+  border: 1px solid rgba(206,106,255,.62);
+  background:
+    linear-gradient(135deg, rgba(178,84,255,.95), rgba(132,40,229,.95)),
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  box-shadow: 0 10px 22px rgba(127,36,214,.36);
+}
+
+.auth-card form.space-y-4 .cta:hover {
+  filter: brightness(1.05);
+}
+
+.auth-card form.space-y-4 .glass-btn.w-full {
+  min-height: 34px;
+  border-radius: 10px;
+  padding: .35rem .65rem !important;
+  font-size: .8rem !important;
+  line-height: 1 !important;
+  border: 1px solid rgba(255,255,255,.17);
+  background:
+    radial-gradient(120% 120% at 50% -40%, rgba(186,96,255,.24), rgba(186,96,255,0) 68%),
+    rgba(255,255,255,.03);
+}
+
+.auth-card form.space-y-4 .text-center.text-xs.uppercase {
+  font-size: .73rem;
+  letter-spacing: .07em;
+  color: rgba(255,255,255,.52);
+}
+
+@media (max-width: 640px) {
+  .auth-card {
+    width: min(520px, 94vw) !important;
+    border-radius: 16px !important;
+    padding: .75rem .75rem .85rem !important;
+  }
+  .auth-card form.space-y-4 > .flex.items-center.justify-between.pt-2 {
+    display: grid;
+    gap: .65rem;
+  }
+}
+
+/* ===== Tab swap (РјРµР¶РґСѓ Sign in / Sign up) ===== */
 .tab-swap-enter-from {
   opacity: 0;
   transform: translateY(6px) scale(.995);
@@ -428,12 +637,14 @@ a.cta {
     filter .18s ease;
 }
 
-/* Активная «комета» на табе — можно чуть усилить glow */
+/* РђРєС‚РёРІРЅР°СЏ В«РєРѕРјРµС‚Р°В» РЅР° С‚Р°Р±Рµ вЂ” РјРѕР¶РЅРѕ С‡СѓС‚СЊ СѓСЃРёР»РёС‚СЊ glow */
 .glass-btn.comet.comet-active {
   box-shadow:
-    0 0 18px rgba(97,225,255,.28),
-    inset 0 0 8px rgba(97,225,255,.18);
-  border-color: rgba(97,225,255,.55);
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.38),
+    0 12px 26px rgba(0,0,0,.34),
+    0 0 0 1px rgba(186,96,255,.2);
+  border-color: rgba(186,96,255,.4);
 }
 
 /* Respect reduced motion */
@@ -452,7 +663,7 @@ a.cta {
   }
 }
 
-/* glass-card + glass-panel (совместимы с хиро-страницей) */
+/* glass-card + glass-panel (СЃРѕРІРјРµСЃС‚РёРјС‹ СЃ С…РёСЂРѕ-СЃС‚СЂР°РЅРёС†РµР№) */
 .glass-card {
   position: relative;
   border-radius: 1.25rem;
@@ -475,7 +686,7 @@ a.cta {
   content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0) 42%) top/100% 60% no-repeat,
-    radial-gradient(70% 40% at 80% -10%, rgba(120,210,255,0.35), rgba(120,210,255,0) 60%);
+    radial-gradient(70% 40% at 80% -10%, rgba(224,118,255,0.42), rgba(120,210,255,0) 60%);
   mix-blend-mode: screen; opacity:.85;
 }
 .glass-card::after{
@@ -485,11 +696,11 @@ a.cta {
     repeating-linear-gradient(45deg, rgba(255,255,255,0.012) 0 2px, rgba(255,255,255,0) 2px 4px);
   opacity:.22;
 }
-/* панель без дополнительных слоёв поверх — как у кнопок/pill */
+/* РїР°РЅРµР»СЊ Р±РµР· РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… СЃР»РѕС‘РІ РїРѕРІРµСЂС… вЂ” РєР°Рє Сѓ РєРЅРѕРїРѕРє/pill */
 .glass-panel{
   border: 1px solid rgba(255,255,255,.15);
   background:
-    radial-gradient(120% 80% at 15% -10%, rgba(165,120,255,0.26) 0%, rgba(165,120,255,0) 46%),
+    radial-gradient(120% 80% at 15% -10%, rgba(206,106,255,0.34) 0%, rgba(165,120,255,0) 46%),
     linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05)) !important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.28),
@@ -519,14 +730,16 @@ main{
   min-height: 100vh;
 }
 .glass-btn.comet {
-
-    border-color: rgba(97, 225, 255, .35) !important;
-    color: rgba(255, 255, 255, .9) !important;
-    background: rgb(16,16,19,.6)!important;
-    box-shadow: inset 0 .5px 0 rgba(255, 255, 255, .35), 0 3px 12px rgba(97, 225, 255, .12) !important;
-
-
-
+  border-color: rgba(220,150,255,.5) !important;
+  color: rgba(255,255,255,.94) !important;
+  background:
+    radial-gradient(130% 110% at 16% -22%, rgba(206,110,255,.4) 0%, rgba(120,170,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.03)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(0,0,0,.34),
+    0 10px 24px rgba(0,0,0,.36) !important,
+    0 0 0 1px rgba(206,110,255,.2) !important;
 }
 
 /* ===== Notifications ===== */
@@ -598,13 +811,13 @@ display: grid;
 grid-template-columns: 120px 1fr;
 }
 .notif-item.unread {
-  background: rgba(160, 200, 255, 0.08);
+  background: rgba(214, 104, 255, 0.18);
 }
 .notif-type {
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
-  color: rgba(160, 200, 255, 0.85);
+  color: rgba(218, 124, 255, 0.9);
 }
 .notif-body {
   flex: 1;
@@ -638,8 +851,8 @@ gap: 6px;
 
 /* ===== Global Scrollbar Styling ===== */
 :root{
-  --eter-scroll-thumb: rgba(165,120,255,0.85); /* site accent purple */
-  --eter-scroll-thumb-hover: rgba(165,120,255,0.95);
+  --eter-scroll-thumb: rgba(206,106,255,0.92); /* site accent purple */
+  --eter-scroll-thumb-hover: rgba(206,106,255,1);
   --eter-scroll-track: #000; /* black track */
 }
 
@@ -658,7 +871,7 @@ html, body, * {
   background: var(--eter-scroll-track);
 }
 *::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--eter-scroll-thumb), rgba(165,120,255,0.65));
+  background: linear-gradient(180deg, var(--eter-scroll-thumb), rgba(206,106,255,0.72));
   border-radius: 10px;
   border: 2px solid var(--eter-scroll-track);
 }
@@ -668,3 +881,4 @@ html, body, * {
 *::-webkit-scrollbar-corner {
   background: var(--eter-scroll-track);
 }
+

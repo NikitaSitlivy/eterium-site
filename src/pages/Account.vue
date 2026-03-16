@@ -14,13 +14,15 @@ const router = useRouter();
 const { user, isAuthed, signOut } = useAuth();
 
 /* ------------ state ------------ */
-const profile = reactive<{ username: string; avatar_url: string | null }>({
+const profile = reactive<{ username: string; avatar_url: string | null; bio: string | null }>({
   username: "",
   avatar_url: null,
+  bio: null,
 });
-const form = reactive<{ username: string; avatar_url: string | null }>({
+const form = reactive<{ username: string; avatar_url: string | null; bio: string }>({
   username: "",
   avatar_url: null,
+  bio: "",
 });
 
 const pageLoading = ref(true);
@@ -42,6 +44,25 @@ type AchRow = {
 };
 const achLoading = ref(false);
 const achRows = ref<AchRow[]>([]);
+type InvRow = {
+  item_id: string;
+  name: string;
+  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary" | string;
+  icon_url: string | null;
+  acquired_at: string;
+};
+const invLoading = ref(false);
+const invRows = ref<InvRow[]>([]);
+const invItems = computed(() =>
+  invRows.value.map((r) => ({
+    key: `${r.item_id}-${r.acquired_at}`,
+    id: r.item_id,
+    name: r.name,
+    rarity: r.rarity,
+    icon_url: r.icon_url,
+    acquired_at: r.acquired_at,
+  }))
+);
 
 function rarityClass(r: string) {
   if (r === "legendary")
@@ -204,6 +225,80 @@ const avatarSrc = computed<string | null>(() => {
   return data.publicUrl || null;
 });
 
+const publicProfileUrl = computed(() => {
+  if (!profile.username) return "";
+  const path = `/u/${encodeURIComponent(profile.username)}`;
+  return typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+});
+const highlights = computed(() => [
+  { label: "Friends", value: String(friends.value.length) },
+  { label: "Incoming", value: String(incoming.value.length) },
+  { label: "Outgoing", value: String(outgoing.value.length) },
+  { label: "Achievements", value: String(achRows.value.length) },
+  { label: "Inventory", value: String(invItems.value.length) },
+  { label: "Public profile", value: publicProfileUrl.value ? "Ready" : "No username" },
+]);
+
+const joinedAt = computed<string | null>(() => {
+  const created = (user.value as any)?.created_at;
+  if (!created) return null;
+  const d = new Date(created);
+  if (Number.isNaN(d.getTime())) return null;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+});
+
+const hasUnsavedChanges = computed(
+  () =>
+    form.username !== profile.username ||
+    form.avatar_url !== profile.avatar_url ||
+    form.bio !== (profile.bio || "")
+);
+
+const copiedId = ref(false);
+async function copyMyId() {
+  const id = user.value?.id;
+  if (!id) return;
+  try {
+    await navigator.clipboard.writeText(id);
+    copiedId.value = true;
+    setTimeout(() => (copiedId.value = false), 1200);
+  } catch {}
+}
+
+async function loadInventoryByUser(userId: string) {
+  invLoading.value = true;
+  try {
+    const { data, error } = await supabase
+      .from("inventory")
+      .select("acquired_at, item_id, items(name, rarity, icon_url)")
+      .eq("user_id", userId)
+      .order("acquired_at", { ascending: false })
+      .limit(8);
+    if (error) throw error;
+
+    invRows.value = (data ?? [])
+      .map((row: any) => {
+        const item = Array.isArray(row.items) ? row.items[0] : row.items;
+        if (!item) return null;
+        return {
+          item_id: row.item_id,
+          name: item.name ?? "Unknown item",
+          rarity: item.rarity ?? "common",
+          icon_url: item.icon_url ?? null,
+          acquired_at: row.acquired_at,
+        } as InvRow;
+      })
+      .filter(Boolean) as InvRow[];
+  } catch {
+    invRows.value = [];
+  } finally {
+    invLoading.value = false;
+  }
+}
+
 /* ------------ helpers: avatars ------------ */
 function extractAvatarPath(
   publicUrl: string | null | undefined
@@ -227,7 +322,7 @@ async function loadProfile(userId: string) {
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("username, avatar_url")
+      .select("username, avatar_url, bio")
       .eq("id", userId)
       .maybeSingle();
     if (error) throw error;
@@ -241,6 +336,8 @@ async function loadProfile(userId: string) {
     }
     form.username = profile.username;
     form.avatar_url = profile.avatar_url;
+    profile.bio = (data?.bio as string | null) ?? null;
+    form.bio = profile.bio ?? "";
   } catch (e: any) {
     const m = e?.message ?? "Failed to load profile";
     err.value = m;
@@ -256,7 +353,7 @@ async function saveProfile() {
   err.value = null;
   pending.value = true;
   try {
-    const uname = (form.username || "").trim().toLowerCase();
+    const uname = (form.username || "").trim();
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(uname)) {
       throw new Error("Username: 3–20 letters, digits or _");
     }
@@ -264,7 +361,7 @@ async function saveProfile() {
     const { data: existing, error: existsErr } = await supabase
       .from("profiles")
       .select("id")
-      .eq("username", uname)
+      .ilike("username", uname.replace(/([\\%_])/g, "\\$1"))
       .maybeSingle();
     if (existsErr && existsErr.code !== "PGRST116") throw existsErr;
     if (existing?.id && existing.id !== currentId) {
@@ -275,11 +372,13 @@ async function saveProfile() {
       id: currentId,
       username: uname,
       avatar_url: form.avatar_url ?? null,
+      bio: form.bio.trim() || null,
     });
     if (upErr) throw upErr;
 
     profile.username = uname;
     profile.avatar_url = form.avatar_url;
+    profile.bio = form.bio.trim() || null;
     msg.value = "Profile updated";
 
     window.dispatchEvent(
@@ -289,6 +388,7 @@ async function saveProfile() {
     );
 
     await loadAchievementsByUser(currentId);
+    await loadInventoryByUser(currentId);
     await loadFriends(currentId);
   } catch (e: any) {
     const m = e?.message ?? "Failed to update profile";
@@ -428,6 +528,7 @@ onMounted(async () => {
     if (!uid) return;
     await loadProfile(uid);
     await loadAchievementsByUser(uid);
+    await loadInventoryByUser(uid);
     await loadFriends(uid);
   } finally {
     pageLoading.value = false;
@@ -436,14 +537,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="p-6 section mx-auto mt-10">
+  <main class="p-6 section mx-auto mt-10 account-page">
     <UiSpinner
       :overlay="true"
       :open="pageLoading || pending"
       label="Working…"
     />
     <div class="flex justify-between items-center">
-      <h1 class="text-2xl font-semibold">Account</h1>
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">Account Core</h1>
       <div class="mt-3 flex items-center gap-2">
         <RouterLink to="/users" class="nav-cta">
           <!-- 🔎 иконка -->
@@ -476,9 +577,9 @@ onMounted(async () => {
       You are not signed in.
     </div>
 
-    <section v-else class="mt-4 grid gap-6 md:grid-cols-[320px,1fr]">
+    <section v-else class="mt-4 grid gap-6 md:grid-cols-[320px,1fr] account-shell">
       <!-- LEFT -->
-      <div class="card p-4 glass-card glass-panel card-fc">
+      <div class="card p-4 glass-card glass-panel card-fc account-card">
         <div class="flex flex-col items-center gap-4">
           <img
             v-if="avatarSrc"
@@ -498,9 +599,41 @@ onMounted(async () => {
             }}
           </div>
 
+          <div class="w-full account-meta">
+            <div class="meta-row">
+              <div class="meta-key">ID</div>
+              <div class="meta-val">
+                <span class="mono">{{ user?.id || "—" }}</span>
+                <button type="button" class="copy-btn" :disabled="!user?.id" @click="copyMyId" title="Copy ID">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M8 8h12v12H8z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M4 4h12v12H4z" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="meta-row">
+              <div class="meta-key">Joined</div>
+              <div class="meta-val">{{ joinedAt || "—" }}</div>
+            </div>
+
+            <div class="meta-row">
+              <div class="meta-key">Public</div>
+              <div class="meta-val">
+                <a v-if="publicProfileUrl" :href="publicProfileUrl" target="_blank" rel="noopener" class="meta-link">
+                  {{ publicProfileUrl }}
+                </a>
+                <span v-else class="text-white/40">Set username first</span>
+              </div>
+            </div>
+
+            <p v-if="copiedId" class="text-[11px] text-green-300/90 mt-2 text-right">ID copied</p>
+          </div>
+
           <button
             type="button"
-            class="btn btn--ghost w-full"
+            class="glass-btn comet account-side-btn w-full"
             :disabled="!profile.avatar_url"
             @click="removeAvatar"
           >
@@ -510,7 +643,7 @@ onMounted(async () => {
             Remove avatar
           </button>
 
-          <button type="button" class="btn w-full" @click="sendResetPassword">
+          <button type="button" class="glass-btn comet account-side-btn w-full" @click="sendResetPassword">
             <svg viewBox="0 0 24 24" class="ico">
               <path d="M12 5v6l4 2M12 3a9 9 0 109 9" />
             </svg>
@@ -519,7 +652,7 @@ onMounted(async () => {
 
           <button
             type="button"
-            class="btn btn--danger w-full"
+            class="glass-btn comet account-side-btn account-side-btn--danger w-full"
             @click="doLogout"
           >
             <svg viewBox="0 0 24 24" class="ico">
@@ -533,9 +666,12 @@ onMounted(async () => {
       </div>
 
       <!-- RIGHT -->
-      <div class="card p-4 md:p-6 glass-card glass-panel">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Profile</h2>
+      <div class="card p-4 md:p-6 glass-card glass-panel account-card">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold">Profile settings</h2>
+            <p class="text-xs text-white/55 mt-1">Manage public profile and avatar</p>
+          </div>
           <span
             v-if="email"
             class="text-xs px-2 py-1 rounded-full border"
@@ -549,13 +685,34 @@ onMounted(async () => {
           </span>
         </div>
 
+        <Transition name="settings-bar">
+          <div v-if="hasUnsavedChanges" class="settings-savebar mt-4">
+            <div class="text-xs text-white/70">You have unsaved settings changes</div>
+            <div class="flex items-center gap-2">
+              <button
+                class="glass-btn comet account-cancel-btn"
+                @click="
+                  form.username = profile.username;
+                  form.avatar_url = profile.avatar_url;
+                  form.bio = profile.bio || '';
+                "
+              >
+                Cancel
+              </button>
+              <button class="glass-btn comet account-save-btn" @click="saveProfile">
+                Save changes
+              </button>
+            </div>
+          </div>
+        </Transition>
+
         <div class="mt-4 space-y-4">
           <div>
             <label class="block text-sm mb-1">Email</label>
             <input
               :value="email"
               disabled
-              class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 opacity-80"
+              class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 opacity-80 account-input"
             />
           </div>
 
@@ -564,11 +721,34 @@ onMounted(async () => {
             <input
               v-model.trim="form.username"
               placeholder="your_nickname"
-              class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-eter-accent"
+              class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-eter-accent account-input"
             />
             <p class="text-xs text-white/50 mt-1">
               3–20 letters, digits or underscore. Unique.
             </p>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Bio</label>
+            <textarea
+              v-model.trim="form.bio"
+              rows="3"
+              placeholder="Tell something about yourself"
+              class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-eter-accent resize-y account-input"
+            />
+            <p class="text-xs text-white/50 mt-1">Shown on your public profile</p>
+          </div>
+
+          <div v-if="publicProfileUrl">
+            <label class="block text-sm mb-1">Public profile link</label>
+            <a
+              :href="publicProfileUrl"
+              target="_blank"
+              rel="noopener"
+              class="block w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white/80 underline underline-offset-2 break-all account-link"
+            >
+              {{ publicProfileUrl }}
+            </a>
           </div>
         </div>
         <div class="sep my-6"></div>
@@ -581,24 +761,34 @@ onMounted(async () => {
           @file="handleFile"
         />
 
-        <div class="mt-6 flex items-center gap-3">
-          <button class="cta" @click="saveProfile">Save changes</button>
-          <button
-            class="nav-cta"
-            v-if="
-              form.username !== profile.username ||
-              form.avatar_url !== profile.avatar_url
-            "
-            @click="
-              form.username = profile.username;
-              form.avatar_url = profile.avatar_url;
-            "
-          >
-            Cancel
-          </button>
-        </div>
-        <!-- ===== FRIENDS SECTION ===== -->
         <div class="sep my-6"></div>
+        <h3 class="text-base font-semibold mb-3">Highlights</h3>
+        <div class="hl-grid mb-6">
+          <div v-for="h in highlights" :key="h.label" class="hl-card">
+            <div class="hl-label">{{ h.label }}</div>
+            <div class="hl-value">{{ h.value }}</div>
+          </div>
+        </div>
+
+        <div class="mini-card mb-6">
+          <div class="mini-title-row">
+            <h4 class="mini-title m-0">Inventory</h4>
+            <RouterLink to="/inventory" class="mini-link">View all</RouterLink>
+          </div>
+          <div v-if="invLoading && invItems.length === 0" class="text-white/60 text-sm">Loading inventory…</div>
+          <div v-else-if="invItems.length === 0" class="text-white/50 text-sm">No items yet.</div>
+          <div v-else class="inv-grid-mini">
+            <div v-for="it in invItems.slice(0, 6)" :key="it.key" class="inv-tile-mini">
+              <div class="inv-mini-imgwrap">
+                <img v-if="it.icon_url" :src="it.icon_url" :alt="it.name" class="inv-mini-img" loading="lazy" />
+                <div v-else class="inv-mini-ph">?</div>
+              </div>
+              <div class="inv-mini-name" :title="it.name">{{ it.name }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== FRIENDS SECTION ===== -->
         <h3 class="text-base font-semibold mb-3">Friends</h3>
         <div v-if="friendsLoading" class="text-white/60 text-sm">
           Loading friends…
@@ -762,20 +952,168 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.account-page {
+  position: relative;
+}
+
+
+.account-shell {
+  position: relative;
+  z-index: 1;
+}
+
 .card {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
+  border: 1px solid rgba(160, 126, 255, 0.18);
+  border-radius: 20px;
   background: radial-gradient(
-      120% 120% at 10% -20%,
-      rgba(160, 190, 255, 0.08),
+      110% 95% at 12% -15%,
+      rgba(192, 124, 255, 0.18),
       rgba(255, 255, 255, 0) 60%
     ),
-    linear-gradient(180deg, rgba(18, 20, 26, 0.9), rgba(12, 14, 18, 0.9));
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+    linear-gradient(180deg, rgba(20, 18, 33, 0.88), rgba(10, 11, 18, 0.9));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 22px 48px rgba(0, 0, 0, 0.48),
+    0 0 22px rgba(182, 110, 255, 0.15);
+}
+
+.account-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.account-card:hover {
+  border-color: rgba(188, 132, 255, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 28px 56px rgba(0, 0, 0, 0.54),
+    0 0 28px rgba(182, 110, 255, 0.22);
+  transform: translateY(-1px);
 }
 .sep {
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(170,128,255,0.35), rgba(255,255,255,0));
+}
+
+.account-input,
+.account-link {
+  border-color: rgba(164, 130, 255, 0.22) !important;
+  background:
+    radial-gradient(120% 95% at 12% -22%, rgba(186, 106, 255, 0.16), rgba(186, 106, 255, 0) 58%),
+    rgba(255,255,255,0.03) !important;
+  color: rgba(255,255,255,0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 6px 16px rgba(0,0,0,0.24);
+}
+.account-input:focus {
+  border-color: rgba(198, 132, 255, 0.5) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    0 0 0 3px rgba(186,96,255,0.16),
+    0 8px 18px rgba(0,0,0,0.3);
+}
+.account-input::placeholder {
+  color: rgba(255,255,255,0.45);
+}
+
+.account-save-btn,
+.account-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 .92rem;
+  border-radius: 10px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.account-save-btn {
+  border: 1px solid rgba(224, 154, 255, 0.72) !important;
+  color: #fff !important;
+  font-weight: 700;
+  letter-spacing: .01em;
+  background:
+    radial-gradient(120% 130% at 12% -25%, rgba(234, 156, 255, 0.54), rgba(234, 156, 255, 0) 58%),
+    linear-gradient(135deg, rgba(168, 76, 255, 0.98), rgba(118, 36, 224, 0.96)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.28),
+    0 14px 30px rgba(122, 34, 214, 0.42),
+    0 0 24px rgba(206, 110, 255, 0.36) !important;
+  transition: transform .16s ease, box-shadow .18s ease, filter .18s ease;
+}
+.account-save-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.3),
+    0 18px 36px rgba(122, 34, 214, 0.5),
+    0 0 32px rgba(206, 110, 255, 0.45);
+}
+.account-save-btn:active {
+  transform: translateY(0);
+}
+
+.account-cancel-btn {
+  font-weight: 600;
+  border-color: rgba(166, 130, 255, 0.28) !important;
+  background:
+    radial-gradient(120% 130% at 12% -25%, rgba(184, 112, 255, 0.22), rgba(184, 112, 255, 0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)) !important;
+}
+
+.settings-savebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(168, 132, 255, 0.25);
+  border-radius: 12px;
+  padding: 8px 10px;
+  background:
+    radial-gradient(100% 120% at 10% -20%, rgba(182,110,255,0.18), rgba(182,110,255,0) 58%),
+    rgba(255,255,255,0.03);
+}
+
+.settings-bar-enter-active,
+.settings-bar-leave-active {
+  transition: opacity .2s ease, transform .2s ease, filter .2s ease;
+}
+.settings-bar-enter-from,
+.settings-bar-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(.985);
+  filter: blur(2px);
+}
+
+.account-side-btn {
+  height: 28px;
+  min-height: 28px;
+  padding: 0 .72rem !important;
+  border-radius: 9999px !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+
+.account-side-btn .ico {
+  width: 14px;
+  height: 14px;
+}
+
+.account-side-btn--danger {
+  border-color: rgba(255, 112, 112, 0.48) !important;
+  color: #ffc1c1 !important;
+  background:
+    radial-gradient(120% 130% at 12% -25%, rgba(255, 110, 110, 0.18), rgba(255, 110, 110, 0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)) !important;
+}
+
+.account-side-btn--danger:hover {
+  border-color: rgba(255, 132, 132, 0.65) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    0 14px 30px rgba(0,0,0,0.4),
+    0 0 20px rgba(255, 102, 102, 0.22) !important;
 }
 
 /* buttons */
@@ -846,6 +1184,158 @@ onMounted(async () => {
 }
 .card-fc {
   height: fit-content;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+.account-meta {
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.hl-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (min-width: 768px) {
+  .hl-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.hl-card {
+  border: 1px solid rgba(165, 130, 255, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background:
+    radial-gradient(100% 100% at 16% -20%, rgba(182,110,255,0.14), rgba(182,110,255,0) 65%),
+    rgba(255, 255, 255, 0.03);
+}
+.hl-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.hl-value {
+  margin-top: 4px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.mini-card {
+  border: 1px solid rgba(165, 130, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  background:
+    radial-gradient(100% 100% at 12% -20%, rgba(182,110,255,0.12), rgba(182,110,255,0) 60%),
+    rgba(255, 255, 255, 0.02);
+}
+.mini-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.mini-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+.mini-link {
+  font-size: 12px;
+  color: #cfe0ff;
+  text-decoration: underline dotted;
+}
+.inv-grid-mini {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (min-width: 768px) {
+  .inv-grid-mini {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.inv-tile-mini {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.inv-mini-imgwrap {
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.inv-mini-img {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+}
+.inv-mini-ph {
+  color: rgba(255, 255, 255, 0.45);
+}
+.inv-mini-name {
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.meta-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.meta-row:first-child {
+  border-top: 0;
+}
+.meta-key {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+.meta-val {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: right;
+  font-size: 0.86rem;
+  line-height: 1.25;
+}
+.meta-link {
+  color: #cfe0ff;
+  text-decoration: underline dotted;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 0.86rem;
+  line-height: 1.25;
+}
+.copy-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.copy-btn:disabled {
+  opacity: 0.5;
 }
 
 /* === Achievements grid (flex, без position) === */
@@ -986,19 +1476,28 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    radial-gradient(100% 100% at 12% -18%, rgba(182,110,255,0.12), rgba(182,110,255,0) 60%),
+    rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(165, 130, 255, 0.2);
   border-radius: 9999px;
   padding: 4px 10px 4px 4px;
   font-size: 13px;
 }
 .mini-btn {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(100% 100% at 14% -22%, rgba(182,110,255,0.16), rgba(182,110,255,0) 62%),
+    rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(165, 130, 255, 0.28);
   border-radius: 9999px;
-  padding: 2px 8px;
+  padding: 3px 10px;
   font-size: 11px;
   line-height: 1;
+  color: rgba(255,255,255,0.94);
+}
+.mini-btn:hover {
+  border-color: rgba(186,96,255,0.48);
+  box-shadow: 0 0 14px rgba(186,96,255,0.22);
 }
 .link-pill {
   text-decoration: none;
@@ -1007,5 +1506,12 @@ onMounted(async () => {
 .link-pill:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 640px) {
+  .settings-savebar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 </style>
