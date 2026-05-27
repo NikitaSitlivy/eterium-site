@@ -84,13 +84,13 @@
               <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-6 9 6v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.5"/><path d="M3 9h18M9 22V9m6 13V9" stroke="currentColor" stroke-width="1.5"/></svg></span>
               <span>Inventory</span>
             </RouterLink>
-<RouterLink class="user-item" to="/store" @click="userMenu = false">
-  <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h16l-1 12H5L4 7Z" stroke="currentColor" stroke-width="1.5"/><path d="M7 7l1-3h8l1 3" stroke="currentColor" stroke-width="1.5"/></svg></span>
-  <span class="flex items-center gap-2">
-    Store
-    <span class="badge soon">Soon</span>
-  </span>
-</RouterLink>
+            <button type="button" class="user-item user-item--disabled" aria-disabled="true">
+              <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h16l-1 12H5L4 7Z" stroke="currentColor" stroke-width="1.5"/><path d="M7 7l1-3h8l1 3" stroke="currentColor" stroke-width="1.5"/></svg></span>
+              <span class="flex items-center gap-2">
+                Store
+                <span class="badge soon">Soon</span>
+              </span>
+            </button>
 
 
             <RouterLink class="user-item" to="/messages" @click="userMenu = false">
@@ -103,7 +103,7 @@
               <span>Settings</span>
             </RouterLink>
 
-            <RouterLink v-if="isAdmin" class="user-item" to="/admin" @click="userMenu = false">
+            <RouterLink v-if="isAdmin && hasAdminRoute" class="user-item" to="/admin" @click="userMenu = false">
               <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4v6c0 5-3 7-8 8-5-1-8-3-8-8V7l8-4Z" stroke="currentColor" stroke-width="1.5"/><path d="M9.5 12l1.5 1.5L14.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
               <span>Admin</span>
             </RouterLink>
@@ -149,6 +149,7 @@ import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import { supabase } from '../lib/superbase'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 const emit = defineEmits<{ (e:'signin'):void; (e:'signup'):void; (e:'logout'):void }>()
 const open = ref(false)
@@ -156,6 +157,7 @@ const supportsBackdrop = ref(false)
 
 const { isAuthed, user } = useAuth()
 const router = useRouter()
+const hasAdminRoute = computed(() => router.getRoutes().some(route => route.path === '/admin'))
 
 const userMenu = ref(false)
 
@@ -182,16 +184,49 @@ function renderNotifTitle(n: any) {
 const notifs = ref<any[]>([])
 const unreadCount = computed(() => notifs.value.filter(n => !n.read_at).length)
 const panelOpen = ref(false)
+let notifChannel: RealtimeChannel | null = null
 
 async function loadNotifs() {
+  if (!user.value?.id) {
+    notifs.value = []
+    return
+  }
   const { data, error } = await supabase
     .from('notifications')
     .select('*')
+    .eq('user_id', user.value.id)
     .order('created_at', { ascending: false })
     .limit(20)
   if (!error) notifs.value = data
 }
-onMounted(loadNotifs)
+
+function destroyNotifChannel() {
+  if (!notifChannel) return
+  void supabase.removeChannel(notifChannel)
+  notifChannel = null
+}
+
+function bindNotifChannel() {
+  destroyNotifChannel()
+  const uid = user.value?.id
+  if (!uid) return
+
+  notifChannel = supabase
+    .channel(`notif-feed:${uid}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${uid}`
+      },
+      payload => {
+        notifs.value.unshift(payload.new)
+      }
+    )
+    .subscribe()
+}
 
 async function loadHeaderProfile() {
   avatarUrl.value = null
@@ -227,12 +262,15 @@ const profileUrl = computed(() =>
 )
 
 async function markAllRead() {
+  if (!user.value?.id) return
+  const readAt = new Date().toISOString()
   const { error } = await supabase
     .from('notifications')
-    .update({ read_at: new Date().toISOString() })
+    .update({ read_at: readAt })
+    .eq('user_id', user.value.id)
     .is('read_at', null)
   if (!error) {
-    notifs.value = notifs.value.map(n => ({ ...n, read_at: new Date().toISOString() }))
+    notifs.value = notifs.value.map(n => ({ ...n, read_at: readAt }))
   }
 }
 
@@ -265,33 +303,20 @@ function onProfileUpdated(e: Event) {
 onMounted(() => {
   supportsBackdrop.value = !!(window.CSS && CSS.supports && CSS.supports('backdrop-filter: blur(10px)'))
   document.addEventListener('click', onDocClick)
-    window.addEventListener('profile:updated', onProfileUpdated)
-    window.addEventListener('notifications:updated', onNotifsUpdated)
-  const uid = user.value?.id
-  if (uid) {
-    supabase
-      .channel('notif-feed')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${uid}`
-        },
-        payload => {
-          notifs.value.unshift(payload.new)
-        }
-      )
-      .subscribe()
-  }
-
+  window.addEventListener('profile:updated', onProfileUpdated)
+  window.addEventListener('notifications:updated', onNotifsUpdated)
 })
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocClick)
-    window.removeEventListener('profile:updated', onProfileUpdated)
-    window.removeEventListener('notifications:updated', onNotifsUpdated)
+  window.removeEventListener('profile:updated', onProfileUpdated)
+  window.removeEventListener('notifications:updated', onNotifsUpdated)
+  destroyNotifChannel()
 })
+
+watch(() => user.value?.id, () => {
+  void loadNotifs()
+  bindNotifChannel()
+}, { immediate: true })
 
 function onNotifsUpdated() { loadNotifs() }
 function toggleNotifs(){
@@ -447,6 +472,13 @@ function toggleDrawer(){
   display:flex; align-items:center; gap:.5rem;
 }
 .user-item:hover{ background: rgba(255,255,255,.06); }
+.user-item--disabled{
+  opacity:.72;
+  cursor:default;
+}
+.user-item--disabled:hover{
+  background: transparent;
+}
 .user-item.danger{ color:#ffb4b4; }
 .user-item.danger:hover{ background: rgba(255,80,80,.12); }
 .user-item .ico{ width:18px; height:18px; display:inline-grid; place-items:center; opacity:.9; }
@@ -469,5 +501,17 @@ function toggleDrawer(){
 }
 .drawer-link:hover{ background: rgba(255,255,255,.06); }
 .site-header:not(.backdrop-supported){ background: rgba(12,14,18,.96) !important }
+
+@media (max-width: 1023px), (pointer: coarse) {
+  .site-header {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 8px 22px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+
+  .accent-line {
+    animation: none;
+  }
+}
 
 </style>

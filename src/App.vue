@@ -9,6 +9,7 @@
     </div>
 
     <canvas
+      v-if="showNebulaCanvas"
       ref="bgCanvas"
       class="fixed inset-0 z-0 w-full h-full pointer-events-none"
     ></canvas>
@@ -17,6 +18,7 @@
     <div class="relative z-10 min-h100">
 
       <SiteHeader
+        v-if="route.path !== '/'"
         :isAuthed="isAuthed"
         @signin="openAuth('signin')"
         @signup="openAuth('signup')"
@@ -144,8 +146,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted, onBeforeUnmount, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import SiteHeader from './components/SiteHeader.vue'
 import { useAuth } from './composables/useAuth'
 import UiPopup from './components/UiPopup.vue'
@@ -155,16 +157,9 @@ import type { NebulaHandle } from './lib/nebula'
 import { portalJumpActive } from './lib/portalTransition'
 
 const router = useRouter()
-
-const mouse = reactive({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
-function onMouse(e: MouseEvent) { mouse.x = e.clientX; mouse.y = e.clientY }
-function onTouch(e: TouchEvent) { const t = e.touches[0]; if (!t) return; mouse.x = t.clientX; mouse.y = t.clientY }
-
-let boost = 0, boostTarget = 0, rafBoost = 0
-let speedEMA = 0
-let lastScrollY = window.scrollY
-let lastScrollT = performance.now()
-const EMA_ALPHA = 0.25
+const route = useRoute()
+const nebulaAllowed = ref(false)
+const showNebulaCanvas = computed(() => nebulaAllowed.value && route.path === '/')
 function clamp01(v: number) { return Math.max(0, Math.min(1, v)) }
 
 function setOrbitFromScroll() {
@@ -174,27 +169,14 @@ function setOrbitFromScroll() {
 }
 
 function onScroll() {
-  const now = performance.now()
-  const dy = window.scrollY - lastScrollY
-  const dt = Math.min(0.25, Math.max(1 / 120, (now - lastScrollT) / 1000))
-  const speed = Math.abs(dy) / dt
-  speedEMA += EMA_ALPHA * (speed - speedEMA)
-  boostTarget = clamp01(speedEMA / 2200)
-  lastScrollY = window.scrollY
-  lastScrollT = now
   setOrbitFromScroll()
-}
-function tickBoost() {
-  boost += (boostTarget - boost) * 0.08
-  boost *= 0.985
-  nebula?.setBoost(boost)
-  rafBoost = requestAnimationFrame(tickBoost)
 }
 
 const bgCanvas = ref<HTMLCanvasElement | null>(null)
 let nebula: NebulaHandle | null = null
 let nebulaLoadCancelled = false
 let authStateSub: { unsubscribe: () => void } | null = null
+let nebulaScrollBound = false
 
 function runWhenIdle(cb: () => void) {
   const ric = (window as Window & {
@@ -213,15 +195,44 @@ async function initNebulaLazy() {
   if (!bgCanvas.value || nebulaLoadCancelled || nebula) return
   nebula = initNebula(bgCanvas.value)
   nebula?.setMouseEnabled(false)
+  setOrbitFromScroll()
+}
+
+function disposeNebula() {
+  nebulaLoadCancelled = true
+  nebula?.dispose()
+  nebula = null
+}
+
+function bindNebulaScroll() {
+  if (nebulaScrollBound) return
+  window.addEventListener('scroll', onScroll, { passive: true })
+  nebulaScrollBound = true
+}
+
+function unbindNebulaScroll() {
+  if (!nebulaScrollBound) return
+  window.removeEventListener('scroll', onScroll)
+  nebulaScrollBound = false
+}
+
+function evaluateNebulaCapability() {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches
+  const saveData = 'connection' in navigator && !!(navigator as Navigator & {
+    connection?: { saveData?: boolean }
+  }).connection?.saveData
+  const lowCpu = typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4
+
+  nebulaAllowed.value = !reducedMotion && !coarsePointer && !saveData && !lowCpu && window.innerWidth >= 1024
 }
 
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') closeAuth()
 }
 onMounted(() => {
-  window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('keydown', onKey)
-  runWhenIdle(() => { void initNebulaLazy() })
+  evaluateNebulaCapability()
 
   const { data: sub } = supabase.auth.onAuthStateChange((event) => {
     if (event === 'SIGNED_IN') {
@@ -235,16 +246,23 @@ onMounted(() => {
   authStateSub = sub?.subscription ?? null
 })
 
+watch(showNebulaCanvas, (enabled) => {
+  if (enabled) {
+    nebulaLoadCancelled = false
+    bindNebulaScroll()
+    runWhenIdle(() => { void initNebulaLazy() })
+    return
+  }
+
+  unbindNebulaScroll()
+  disposeNebula()
+}, { immediate: true, flush: 'post' })
 
 onBeforeUnmount(() => {
-  nebulaLoadCancelled = true
+  unbindNebulaScroll()
   authStateSub?.unsubscribe()
-  cancelAnimationFrame(rafBoost)
-  window.removeEventListener('mousemove', onMouse)
-  window.removeEventListener('touchmove', onTouch)
-  window.removeEventListener('scroll', onScroll)
   window.removeEventListener('keydown', onKey)
-  nebula?.dispose()
+  disposeNebula()
 })
 
 type Mode = 'signin' | 'signup'
