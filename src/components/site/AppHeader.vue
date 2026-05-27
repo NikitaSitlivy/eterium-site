@@ -2,13 +2,7 @@
   <header class="app-header">
     <div class="app-header__bar home-shell">
       <RouterLink class="brand-mark" to="/" aria-label="Eterium home">
-        <span class="brand-mark__badge">
-          <svg viewBox="0 0 48 48" aria-hidden="true">
-            <path d="M24 3.5 41 13.2v21.6L24 44.5 7 34.8V13.2Z" />
-            <path d="M31.5 15.2H18.2v5.1H28v4.4h-9.8V30h13.3v5.2H12.5V10h19Z" />
-          </svg>
-        </span>
-        <span class="brand-mark__text">Eterium</span>
+        <img class="brand-mark__logo" src="/media/logo.png" alt="Eterium" />
       </RouterLink>
 
       <nav class="app-header__nav" aria-label="Primary navigation">
