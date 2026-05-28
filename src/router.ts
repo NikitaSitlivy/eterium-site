@@ -46,7 +46,7 @@ export const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   if (to.path === '/games/agassu' && from.path !== '/games/agassu') {
-    await playPortalJump()
+    void playPortalJump()
   }
 
   if (!to.meta?.auth) return true

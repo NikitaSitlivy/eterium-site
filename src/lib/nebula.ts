@@ -15,7 +15,10 @@ export type NebulaHandle = {
  * • мягкие звёзды (дрейф/мерцание), комета, сверхмягкий параллакс.
  */
 export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
-  const dpr = Math.min(2, window.devicePixelRatio || 1)
+  const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
+  const cpuCores = navigator.hardwareConcurrency || 8
+  const constrainedDevice = deviceMemory <= 4 || cpuCores <= 6
+  const dpr = Math.min(constrainedDevice ? 1.25 : 1.6, window.devicePixelRatio || 1)
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' })
   renderer.setPixelRatio(dpr)
   renderer.setSize(window.innerWidth, window.innerHeight)
@@ -210,7 +213,7 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
     return new THREE.Vector3(r * s * Math.cos(th), r * s * Math.sin(th), r * z)
   }
 
-  const COUNT = 26000
+  const COUNT = constrainedDevice ? 12000 : 18000
   const positions = new Float32Array(COUNT * 3)
   const colors = new Float32Array(COUNT * 3)
   const sizes = new Float32Array(COUNT)
@@ -518,7 +521,7 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
     renderer.setSize(window.innerWidth, window.innerHeight)
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
-    starUniforms.uPixelRatio.value = Math.min(2, window.devicePixelRatio || 1)
+    starUniforms.uPixelRatio.value = Math.min(constrainedDevice ? 1.25 : 1.6, window.devicePixelRatio || 1)
     // критично: для экранного шейдера обновляем uResolution
     ;(fsNebula.mesh.material as THREE.ShaderMaterial).uniforms.uResolution.value.set(window.innerWidth, window.innerHeight)
   }
@@ -526,6 +529,7 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
 
   // ---------- Smooth scroll parallax ----------
   let rafId = 0
+  let lastFrameTime = 0
   let t = 0
   let _boost = 0
   let scrollRaw = 0
@@ -552,7 +556,14 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
   }
 
   // ---------- Animate ----------
-  function animate() {
+  function animate(now = 0) {
+    const minFrameMs = constrainedDevice ? 1000 / 30 : 1000 / 45
+    if (now - lastFrameTime < minFrameMs) {
+      rafId = requestAnimationFrame(animate)
+      return
+    }
+    lastFrameTime = now
+
     // орбита камеры
     orbitT += (orbitTargetT - orbitT) * 0.085
     const cx = Math.sin(orbitT) * ORBIT_RADIUS
