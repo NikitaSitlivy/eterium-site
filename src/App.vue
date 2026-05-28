@@ -169,7 +169,6 @@ import AppHeader from './components/site/AppHeader.vue'
 import { useAuth } from './composables/useAuth'
 import UiPopup from './components/UiPopup.vue'
 import UiSpinner from './components/UiSpinner.vue'
-import { supabase } from './lib/superbase'
 import type { NebulaHandle } from './lib/nebula'
 import { portalJumpActive } from './lib/portalTransition'
 import './assets/styles/home.css'
@@ -195,6 +194,11 @@ let nebula: NebulaHandle | null = null
 let nebulaLoadCancelled = false
 let authStateSub: { unsubscribe: () => void } | null = null
 let nebulaScrollBound = false
+
+async function getSupabase() {
+  const mod = await import('./lib/superbase')
+  return mod.supabase
+}
 
 function runWhenIdle(cb: () => void) {
   const ric = (window as Window & {
@@ -248,20 +252,19 @@ function evaluateNebulaCapability() {
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') closeAuth()
 }
+async function bindAuthEvents() {
+  const supabase = await getSupabase()
+  const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_IN') authOpen.value = false
+    if (event === 'PASSWORD_RECOVERY') window.location.assign('/reset')
+  })
+  authStateSub = sub?.subscription ?? null
+}
 onMounted(() => {
   window.addEventListener('keydown', onKey)
   evaluateNebulaCapability()
-
-  const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-    if (event === 'SIGNED_IN') {
-      authOpen.value = false
-      // сюда можно добавить тост «Welcome back»
-    }
-    if (event === 'PASSWORD_RECOVERY') {
-      window.location.assign('/reset')
-    }
-  })
-  authStateSub = sub?.subscription ?? null
+  if (route.path === '/reset') void bindAuthEvents()
+  else runWhenIdle(() => { void bindAuthEvents() })
 })
 
 watch(showNebulaCanvas, (enabled) => {
@@ -343,6 +346,7 @@ async function onSubmit() {
     }
 
     const uname = form.username.trim()
+    const supabase = await getSupabase()
 
     const { data: existing, error: existsErr } = await supabase
       .from('profiles')
@@ -391,6 +395,7 @@ async function sendResetEmail() {
   }
   try {
     pending.value = true
+    const supabase = await getSupabase()
     const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
       redirectTo: `${window.location.origin}/reset`
     } as any)
@@ -408,6 +413,7 @@ async function oauth(provider: 'google' ) {
   submitInfo.value = ''
   try {
     pending.value = true
+    const supabase = await getSupabase()
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: window.location.origin }

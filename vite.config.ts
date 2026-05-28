@@ -10,6 +10,14 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
+    modulePreload: {
+      resolveDependencies(_filename, deps) {
+        return deps.filter((dep) => (
+          !dep.includes('vendor-supabase') &&
+          !dep.includes('vendor-three')
+        ))
+      }
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {

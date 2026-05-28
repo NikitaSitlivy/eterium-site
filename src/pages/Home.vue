@@ -8,7 +8,7 @@
           <CyberPanel tone="default" class="panel-pad why-panel">
             <div class="eyebrow section-label">Why</div>
             <h2 class="section-title">
-              Browser-Native
+              <span class="title-nowrap">Browser-Native</span>
               <br />
               Is the Future
             </h2>
@@ -158,13 +158,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { defineAsyncComponent, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppFooter from '../components/site/AppFooter.vue'
 import CyberPanel from '../components/site/CyberPanel.vue'
-import EnergyOrb from '../components/site/EnergyOrb.vue'
 import FeatureChip from '../components/site/FeatureChip.vue'
 import HeroSection from '../components/site/HeroSection.vue'
+const EnergyOrb = defineAsyncComponent(() => import('../components/site/EnergyOrb.vue'))
 const showEnergyImage = ref(true)
 const showPrologueImage = ref(true)
 const energyRiftImage = encodeURI('/media/magic-ball/ChatGPT Image 26 апр. 2026 г., 10_42_15.png')

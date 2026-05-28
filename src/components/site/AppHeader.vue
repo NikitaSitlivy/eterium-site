@@ -136,7 +136,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useAuth } from '../../composables/useAuth'
-import { supabase } from '../../lib/superbase'
 
 const navItems = [
   { label: 'Games', href: '/#development' },
@@ -158,6 +157,11 @@ const avatarUrl = ref<string | null>(null)
 const profileUsername = ref<string | null>(null)
 const notifs = ref<any[]>([])
 let notifChannel: RealtimeChannel | null = null
+
+async function getSupabase() {
+  const mod = await import('../../lib/superbase')
+  return mod.supabase
+}
 
 const email = computed(() => user.value?.email ?? '')
 const displayLabel = computed(() => {
@@ -196,6 +200,7 @@ async function loadHeaderProfile() {
   avatarUrl.value = null
   profileUsername.value = null
   if (!user.value?.id) return
+  const supabase = await getSupabase()
   const { data, error } = await supabase
     .from('profiles')
     .select('username, avatar_url')
@@ -212,6 +217,7 @@ async function loadNotifs() {
     notifs.value = []
     return
   }
+  const supabase = await getSupabase()
   const { data, error } = await supabase
     .from('notifications')
     .select('*')
@@ -221,16 +227,18 @@ async function loadNotifs() {
   if (!error) notifs.value = data ?? []
 }
 
-function destroyNotifChannel() {
+async function destroyNotifChannel() {
   if (!notifChannel) return
+  const supabase = await getSupabase()
   void supabase.removeChannel(notifChannel)
   notifChannel = null
 }
 
-function bindNotifChannel() {
-  destroyNotifChannel()
+async function bindNotifChannel() {
+  await destroyNotifChannel()
   const uid = user.value?.id
   if (!uid) return
+  const supabase = await getSupabase()
   notifChannel = supabase
     .channel(`notif-feed:${uid}`)
     .on(
@@ -246,6 +254,7 @@ function bindNotifChannel() {
 async function markAllRead() {
   if (!user.value?.id) return
   const readAt = new Date().toISOString()
+  const supabase = await getSupabase()
   const { error } = await supabase
     .from('notifications')
     .update({ read_at: readAt })
@@ -299,7 +308,7 @@ async function handleSignOut() {
 watch(() => user.value?.id, () => {
   void loadHeaderProfile()
   void loadNotifs()
-  bindNotifChannel()
+  void bindNotifChannel()
 }, { immediate: true })
 
 onMounted(() => {
@@ -312,6 +321,6 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', onDocClick)
   window.removeEventListener('profile:updated', onProfileUpdated)
   window.removeEventListener('notifications:updated', onNotifsUpdated)
-  destroyNotifChannel()
+  void destroyNotifChannel()
 })
 </script>

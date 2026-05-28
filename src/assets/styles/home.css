@@ -1191,6 +1191,10 @@ body {
   line-height: 0.95;
 }
 
+.title-nowrap {
+  white-space: nowrap;
+}
+
 .card-heading {
   margin-top: 10px;
   font-size: clamp(34px, 3vw, 46px);
@@ -1198,16 +1202,15 @@ body {
 }
 
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 20px;
 }
 
 .stat-cell {
-  display: grid;
-  gap: 6px;
-  justify-items: start;
+  flex: 1 1 150px;
+  min-width: 140px;
 }
 
 .stat-cell span {
@@ -1657,7 +1660,7 @@ body {
   }
 
   .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
   }
 }
 
@@ -1732,7 +1735,7 @@ body {
   }
 
   .feature-chip {
-    width: calc(50% - 4px);
+    width: 100%;
     justify-content: center;
   }
 
@@ -1741,7 +1744,7 @@ body {
   }
 
   .stats-grid {
-    grid-template-columns: 1fr 1fr;
+    display: flex;
   }
 
   .media-stack picture {

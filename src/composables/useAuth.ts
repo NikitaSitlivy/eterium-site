@@ -1,5 +1,4 @@
 import { ref, computed } from 'vue'
-import { supabase } from '../lib/superbase'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 
 const currentUser = ref<any>(null)
@@ -7,8 +6,25 @@ const loading = ref(true)
 let authInitialized = false
 let authInitPromise: Promise<void> | null = null
 
+async function getSupabase() {
+  const mod = await import('../lib/superbase')
+  return mod.supabase
+}
+
+function runWhenIdle(cb: () => void) {
+  const ric = (window as Window & {
+    requestIdleCallback?: (callback: () => void) => number
+  }).requestIdleCallback
+  if (ric) {
+    ric(cb)
+    return
+  }
+  window.setTimeout(cb, 500)
+}
+
 async function loadSession() {
   loading.value = true
+  const supabase = await getSupabase()
   const { data } = await supabase.auth.getSession()
   currentUser.value = data.session?.user ?? null
   loading.value = false
@@ -25,6 +41,7 @@ async function ensureAuthInitialized() {
 
   authInitPromise = (async () => {
     await loadSession()
+    const supabase = await getSupabase()
     supabase.auth.onAuthStateChange(applySession)
     authInitialized = true
   })()
@@ -34,24 +51,27 @@ async function ensureAuthInitialized() {
 
 export function useAuth() {
   const isAuthed = computed(() => !!currentUser.value?.id)
-  void ensureAuthInitialized()
+  runWhenIdle(() => { void ensureAuthInitialized() })
 
   const signUp = async (email: string, password: string) => {
+    const supabase = await getSupabase()
     const { error } = await supabase.auth.signUp({ email, password })
     if (error) throw error
     await loadSession()
   }
 
   const signIn = async (email: string, password: string) => {
+    const supabase = await getSupabase()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     await loadSession()
   }
 
   const signOut = async () => {
+    const supabase = await getSupabase()
     await supabase.auth.signOut()
     currentUser.value = null
   }
 
-  return { user: currentUser, isAuthed, loading, signIn, signUp, signOut }
+  return { user: currentUser, isAuthed, loading, signIn, signUp, signOut, ensureAuthInitialized }
 }
