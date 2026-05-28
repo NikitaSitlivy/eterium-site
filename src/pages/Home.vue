@@ -167,8 +167,8 @@ import HeroSection from '../components/site/HeroSection.vue'
 const EnergyOrb = defineAsyncComponent(() => import('../components/site/EnergyOrb.vue'))
 const showEnergyImage = ref(true)
 const showPrologueImage = ref(true)
-const energyRiftImage = encodeURI('/media/magic-ball/ChatGPT Image 26 апр. 2026 г., 10_42_15.png')
-const prologueRiftImage = encodeURI('/media/ChatGPT Image 26 апр. 2026 г., 10_46_06.png')
+const energyRiftImage = '/media/magic-ball/energy-rift.jpg'
+const prologueRiftImage = '/media/prologue-rift.jpg'
 
 const stats = [
   { label: 'Instant startup', icon: 'bolt', tone: 'pink' },

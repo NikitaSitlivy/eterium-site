@@ -1127,12 +1127,15 @@ body {
   display: block;
   width: auto;
   height: 70px;
+  aspect-ratio: 1286 / 679;
   object-fit: contain;
   filter:
     drop-shadow(0 0 6px rgba(255, 61, 242, 0.12))
     drop-shadow(0 0 8px rgba(40, 216, 255, 0.08));
 }
-
+.brand-mark__logo--footer{
+    aspect-ratio: 60 / 67;
+}
 .brand-mark__logo--footer {
   height: 60px;
 }
@@ -1339,7 +1342,7 @@ body {
   background:
     linear-gradient(180deg, rgba(8, 11, 20, 0.52), rgba(8, 11, 20, 0.88)),
     radial-gradient(circle at 26% 20%, rgba(255, 61, 242, 0.08), transparent 36%),
-    url('/media/ChatGPT%20Image%2026%20%D0%B0%D0%BF%D1%80.%202026%20%D0%B3.,%2010_46_06.png') center/cover no-repeat;
+    url('/media/prologue-rift.jpg') center/cover no-repeat;
   opacity: 0.34;
 }
 

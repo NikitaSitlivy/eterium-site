@@ -211,6 +211,10 @@ function runWhenIdle(cb: () => void) {
   window.setTimeout(cb, 120)
 }
 
+function runAfterStartup(cb: () => void) {
+  window.setTimeout(() => runWhenIdle(cb), 1800)
+}
+
 async function initNebulaLazy() {
   if (!bgCanvas.value || nebulaLoadCancelled || nebula) return
   const { initNebula } = await import('./lib/nebula')
@@ -271,7 +275,7 @@ watch(showNebulaCanvas, (enabled) => {
   if (enabled) {
     nebulaLoadCancelled = false
     bindNebulaScroll()
-    runWhenIdle(() => { void initNebulaLazy() })
+    runAfterStartup(() => { void initNebulaLazy() })
     return
   }
 
