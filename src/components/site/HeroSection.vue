@@ -7,6 +7,8 @@
           class="hero-stage__image"
           :src="heroPortal"
           alt=""
+          width="1122"
+          height="1402"
           fetchpriority="high"
           decoding="async"
           @error="showHeroImage = false"
@@ -58,7 +60,7 @@ import CyberPanel from './CyberPanel.vue'
 import FeatureChip from './FeatureChip.vue'
 
 const showHeroImage = ref(true)
-const heroPortal = encodeURI('/media/hero/ChatGPT Image 26 апр. 2026 г., 10_29_12.png')
+const heroPortal = '/media/hero/agassu-hero-lcp.jpg'
 
 const chips = [
   { label: 'Instant startup', icon: 'bolt', tone: 'pink' },
