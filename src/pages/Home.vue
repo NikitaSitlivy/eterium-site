@@ -1,7 +1,6 @@
 <template>
   <div class="home-page">
     <div class="home-shell-frame">
-      <AppHeader />
       <HeroSection />
 
       <section id="why" class="home-section">
@@ -162,13 +161,10 @@
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppFooter from '../components/site/AppFooter.vue'
-import AppHeader from '../components/site/AppHeader.vue'
 import CyberPanel from '../components/site/CyberPanel.vue'
 import EnergyOrb from '../components/site/EnergyOrb.vue'
 import FeatureChip from '../components/site/FeatureChip.vue'
 import HeroSection from '../components/site/HeroSection.vue'
-import '../assets/styles/home.css'
-
 const showEnergyImage = ref(true)
 const showPrologueImage = ref(true)
 const energyRiftImage = encodeURI('/media/magic-ball/ChatGPT Image 26 апр. 2026 г., 10_42_15.png')

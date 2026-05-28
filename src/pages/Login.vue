@@ -44,9 +44,22 @@ async function submit() {
 </script>
 
 <template>
-  <section class="section py-16 min-h-[60vh]">
+  <section class="eter-page">
+    <div class="eter-frame">
+      <section class="eter-section eter-hero">
+        <div class="eter-hero-panel">
+          <div class="eter-hero-content">
+            <div>
+              <div class="eter-eyebrow">Access</div>
+              <h1 class="eter-title">{{ heading }}</h1>
+              <p class="eter-subtitle">Enter Eterium to manage your profile, inventory, friends, and messages.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="eter-section eter-content">
     <div class="max-w-md mx-auto mt-4">
-      <div class="glass-card glass-panel p-6 md:p-8">
+      <div class="eter-panel p-6 md:p-8">
         <div class="flex gap-3 mb-5">
           <button
             type="button"
@@ -65,8 +78,6 @@ async function submit() {
             Sign up
           </button>
         </div>
-
-        <h1 class="text-2xl font-extrabold mb-4">{{ heading }}</h1>
 
         <div class="space-y-4">
           <div>
@@ -111,6 +122,8 @@ async function submit() {
           <p v-if="err" class="text-red-400">{{ err }}</p>
         </div>
       </div>
+    </div>
+      </section>
     </div>
   </section>
 </template>

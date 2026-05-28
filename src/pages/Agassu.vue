@@ -1,8 +1,20 @@
 <template>
-  <div class="section py-24">
-    <h1 class="text-4xl font-extrabold mb-4">AGASSU</h1>
-    <p class="text-white/70">A third-person co-op roguelike horror — page coming soon.</p>
-    <RouterLink to="/" class="cta mt-6 inline-block">Back to Home</RouterLink>
+  <div class="eter-page">
+    <div class="eter-frame">
+      <section class="eter-section eter-hero">
+        <div class="eter-hero-panel">
+          <div class="eter-hero-content">
+            <div>
+              <div class="eter-eyebrow">Game</div>
+              <h1 class="eter-title">AGASSU</h1>
+              <p class="eter-subtitle">A third-person co-op roguelike horror - page coming soon.</p>
+            </div>
+            <RouterLink to="/" class="eter-btn">Back to Home</RouterLink>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
+
 <script setup lang="ts"></script>

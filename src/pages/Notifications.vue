@@ -68,13 +68,23 @@ onMounted(load)
 </script>
 
 <template>
-  <main class="p-6 section mx-auto mt-10">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-extrabold">Notifications</h1>
-      <button class="nav-cta" @click="markAllRead" :disabled="unreadCount===0">Mark all read</button>
-    </div>
+  <main class="eter-page">
+    <div class="eter-frame">
+      <section class="eter-section eter-hero">
+        <div class="eter-hero-panel">
+          <div class="eter-hero-content">
+            <div>
+              <div class="eter-eyebrow">Inbox</div>
+              <h1 class="eter-title">Notifications</h1>
+              <p class="eter-subtitle">{{ unreadCount }} unread update{{ unreadCount===1?'':'s' }}</p>
+            </div>
+            <button class="nav-cta" @click="markAllRead" :disabled="unreadCount===0">Mark all read</button>
+          </div>
+        </div>
+      </section>
 
-    <div class="mt-4 glass-card glass-panel p-4 md:p-6">
+    <section class="eter-section eter-content">
+    <div class="eter-panel p-4 md:p-6">
       <p v-if="err" class="text-red-400">{{ err }}</p>
       <div v-else-if="!loading && items.length === 0" class="text-center text-white/80">No notifications yet.</div>
       <div v-else class="">
@@ -87,6 +97,8 @@ onMounted(load)
           </div>
         </div>
       </div>
+    </div>
+    </section>
     </div>
   </main>
 </template>

@@ -25,11 +25,23 @@ onMounted(() => {
 
 
 <template>
-  <main class="section py-8 max-w-4xl mx-auto mt-10 pl-0 pr-0">
-    <h1 class="title">Legal</h1>
+  <main class="eter-page">
+    <div class="eter-frame">
+      <section class="eter-section eter-hero">
+        <div class="eter-hero-panel">
+          <div class="eter-hero-content">
+            <div>
+              <div class="eter-eyebrow">Policy</div>
+              <h1 class="eter-title">Legal</h1>
+              <p class="eter-subtitle">Content rules, terms summary, and privacy principles for Eterium.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="eter-section eter-content legal-content">
 
     <!-- quick toc -->
-    <nav class="toc card mt-4">
+    <nav class="toc card eter-panel mt-4">
       <div class="toc-title">On this page</div>
       <ul class="toc-list">
         <li>
@@ -42,7 +54,7 @@ onMounted(() => {
     </nav>
 
     <!-- CONTENT POLICY -->
-    <section id="content-policy" class="card mt-6 p-5 md:p-6">
+    <section id="content-policy" class="card eter-panel mt-6 p-5 md:p-6">
       <h2 class="h2">User Content & Acceptable Use Policy</h2>
       <p class="lead">
         We want Eterium to remain a safe and lawful space. Below are the types
@@ -101,7 +113,7 @@ onMounted(() => {
     </section>
 
     <!-- TOS (short) -->
-    <section id="tos" class="card mt-6 p-5 md:p-6">
+    <section id="tos" class="card eter-panel mt-6 p-5 md:p-6">
       <h2 class="h2">Terms of Service — Summary</h2>
       <ul class="bullets">
         <li>
@@ -131,7 +143,7 @@ onMounted(() => {
     </section>
 
     <!-- Privacy (short) -->
-    <section id="privacy" class="card mt-6 p-5 md:p-6">
+    <section id="privacy" class="card eter-panel mt-6 p-5 md:p-6">
       <h2 class="h2">Privacy — Summary</h2>
       <ul class="bullets">
         <li>
@@ -152,7 +164,7 @@ onMounted(() => {
         basic principles described here apply.
       </p>
     </section>
- <div class="glass-card glass-panel p-5 md:p-6 mt-5">
+ <div class="eter-panel p-5 md:p-6 mt-5">
         <h3 class="h3 mb-3">What it means for players</h3>
         <ul class="bullets">
           <li>
@@ -188,7 +200,8 @@ onMounted(() => {
       </p>
       
     </section> -->
-   
+      </section>
+    </div>
   </main>
 </template>
 

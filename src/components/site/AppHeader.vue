@@ -2,7 +2,7 @@
   <header class="app-header">
     <div class="app-header__bar home-shell">
       <RouterLink class="brand-mark" to="/" aria-label="Eterium home">
-        <img class="brand-mark__logo" src="/media/logo.png" alt="Eterium" />
+        <img class="brand-mark__logo" src="/media/eterium-logo.svg" alt="Eterium" />
       </RouterLink>
 
       <nav class="app-header__nav" aria-label="Primary navigation">
@@ -11,12 +11,86 @@
 
       <div class="app-header__actions">
         <template v-if="isAuthed">
-          <RouterLink class="btn btn-ghost" to="/account">Account</RouterLink>
-          <button class="btn btn-secondary" type="button" @click="handleSignOut">Sign out</button>
+          <div class="auth-actions">
+            <button class="user-pill" type="button" @click.stop.prevent="toggleUserMenu">
+              <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" class="avatar-img" referrerpolicy="no-referrer" />
+              <span v-else class="avatar-dot">{{ avatarInitial }}</span>
+              <span class="user-label">{{ displayLabel }}</span>
+            </button>
+
+            <div class="notif-root">
+              <button class="notif-btn" type="button" aria-label="Notifications" @click.stop="toggleNotifs">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M10 21h4a2 2 0 0 1-4 0Zm2-19a7 7 0 0 1 7 7v4l1 2H4l1-2v-4a7 7 0 0 1 7-7Z"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <span v-if="unreadCount > 0" class="notif-dot">{{ unreadCount }}</span>
+              </button>
+
+              <transition name="home-fade">
+                <div v-if="panelOpen" class="notif-panel glass-card glass-panel">
+                  <div class="notif-head">
+                    <span>Notifications</span>
+                    <button class="mini-btn" type="button" @click="markAllRead">Mark all read</button>
+                  </div>
+
+                  <div v-if="notifs.length === 0" class="notif-empty">No notifications yet.</div>
+                  <div v-else class="notif-list">
+                    <div
+                      v-for="n in notifs"
+                      :key="n.id"
+                      class="notif-item"
+                      :class="{ unread: !n.read_at }"
+                    >
+                      <div class="notif-type">{{ n.type }}</div>
+                      <div class="notif-body">
+                        <div class="notif-text">{{ renderNotifTitle(n) }}</div>
+                        <div class="notif-time">{{ new Date(n.created_at).toLocaleString() }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <RouterLink to="/notifications" class="notif-footer" @click="panelOpen = false">View all</RouterLink>
+                </div>
+              </transition>
+            </div>
+
+            <transition name="home-fade">
+              <div v-if="userMenu" class="user-menu">
+                <RouterLink class="user-item" to="/account" @click="userMenu = false">
+                  <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm7 8a7 7 0 0 0-14 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                  <span>Account</span>
+                </RouterLink>
+                <RouterLink class="user-item" to="/inventory" @click="userMenu = false">
+                  <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-6 9 6v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.5"/><path d="M3 9h18M9 22V9m6 13V9" stroke="currentColor" stroke-width="1.5"/></svg></span>
+                  <span>Inventory</span>
+                </RouterLink>
+                <button type="button" class="user-item user-item--disabled" aria-disabled="true">
+                  <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 7h16l-1 12H5L4 7Z" stroke="currentColor" stroke-width="1.5"/><path d="M7 7l1-3h8l1 3" stroke="currentColor" stroke-width="1.5"/></svg></span>
+                  <span class="user-item__content">Store <span class="badge soon">Soon</span></span>
+                </button>
+                <RouterLink class="user-item" to="/messages" @click="userMenu = false">
+                  <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 12a7 7 0 0 1-7 7H7l-4 4V5a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7Z" transform="translate(0 3)" stroke="currentColor" stroke-width="1.5"/></svg></span>
+                  <span class="user-item__content">Messages <span v-if="unreadCount > 0" class="badge ok">{{ unreadCount }}</span></span>
+                </RouterLink>
+                <RouterLink class="user-item" to="/settings" @click="userMenu = false">
+                  <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 15.5a3.5 3.5 0 1 0-3.5-3.5 3.5 3.5 0 0 0 3.5 3.5ZM19.4 15a1.6 1.6 0 0 0 .32 1.76l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.6 1.6 0 0 0 15 19.4a1.6 1.6 0 0 0-1.5 1.1 2 2 0 0 1-3 0A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.76.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.6 1.6 0 0 0 4.6 15 1.6 1.6 0 0 0 3.5 13.5a2 2 0 0 1 0-3A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.32-1.76l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.6 1.6 0 0 0 9 4.6 1.6 1.6 0 0 0 10.5 3.5a2 2 0 0 1 3 0A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.76-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.6 1.6 0 0 0 19.4 9c.08.5.08 1 .08 1.5s0 1-.08 1.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+                  <span>Settings</span>
+                </RouterLink>
+                <button class="user-item danger" type="button" @click.stop.prevent="handleSignOut">
+                  <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3" stroke="currentColor" stroke-width="1.5"/><path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+                  <span>Log out</span>
+                </button>
+              </div>
+            </transition>
+          </div>
         </template>
         <template v-else>
-          <RouterLink class="btn btn-ghost" to="/login">Sign in</RouterLink>
-          <RouterLink class="btn btn-primary" to="/login?mode=signup">Sign up</RouterLink>
+          <button class="btn btn-ghost" type="button" @click="openAuth('signin')">Sign in</button>
+          <button class="btn btn-primary" type="button" @click="openAuth('signup')">Sign up</button>
         </template>
       </div>
 
@@ -42,12 +116,14 @@
         </nav>
         <div class="app-header__drawer-actions">
           <template v-if="isAuthed">
-            <RouterLink class="btn btn-ghost" to="/account" @click="menuOpen = false">Account</RouterLink>
+            <RouterLink class="btn btn-ghost" to="/account" @click="menuOpen = false">{{ displayLabel }}</RouterLink>
+            <RouterLink class="btn btn-ghost" to="/notifications" @click="menuOpen = false">Notifications</RouterLink>
+            <RouterLink class="btn btn-ghost" to="/messages" @click="menuOpen = false">Messages</RouterLink>
             <button class="btn btn-secondary" type="button" @click="handleSignOut">Sign out</button>
           </template>
           <template v-else>
-            <RouterLink class="btn btn-ghost" to="/login" @click="menuOpen = false">Sign in</RouterLink>
-            <RouterLink class="btn btn-primary" to="/login?mode=signup" @click="menuOpen = false">Sign up</RouterLink>
+            <button class="btn btn-ghost" type="button" @click="openAuth('signin')">Sign in</button>
+            <button class="btn btn-primary" type="button" @click="openAuth('signup')">Sign up</button>
           </template>
         </div>
       </div>
@@ -56,24 +132,186 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useAuth } from '../../composables/useAuth'
+import { supabase } from '../../lib/superbase'
 
 const navItems = [
-  { label: 'Games', href: '#development' },
-  { label: 'Community', href: '#why' },
-  { label: 'Devlog', href: '#development' },
-  { label: 'Support', href: '#support' }
+  { label: 'Games', href: '/#development' },
+  { label: 'Community', href: '/#why' },
+  { label: 'Devlog', href: '/#development' },
+  { label: 'Support', href: '/#support' }
 ]
 
 const router = useRouter()
-const { isAuthed, signOut } = useAuth()
+const { isAuthed, signOut, user } = useAuth()
 const menuOpen = ref(false)
+const emit = defineEmits<{
+  (e: 'signin'): void
+  (e: 'signup'): void
+}>()
+const userMenu = ref(false)
+const panelOpen = ref(false)
+const avatarUrl = ref<string | null>(null)
+const profileUsername = ref<string | null>(null)
+const notifs = ref<any[]>([])
+let notifChannel: RealtimeChannel | null = null
+
+const email = computed(() => user.value?.email ?? '')
+const displayLabel = computed(() => {
+  const metaName = (
+    user.value?.user_metadata?.username ||
+    user.value?.user_metadata?.desired_username ||
+    ''
+  ) as string
+  return profileUsername.value || metaName || (email.value ? email.value.split('@')[0] : 'Account')
+})
+const avatarInitial = computed(() => (displayLabel.value[0] || 'U').toUpperCase())
+const unreadCount = computed(() => notifs.value.filter(n => !n.read_at).length)
+
+function openAuth(mode: 'signin' | 'signup') {
+  menuOpen.value = false
+  if (mode === 'signin') emit('signin')
+  else emit('signup')
+}
+
+function renderNotifTitle(n: any) {
+  switch (n.type) {
+    case 'purchase':
+      return `Purchase: ${n.data?.item_name ?? 'Unknown item'}`
+    case 'drop':
+      return `You got a drop: ${n.data?.title ?? 'Unknown drop'}`
+    case 'message':
+      return `New message from ${n.data?.from ?? 'someone'}`
+    case 'system':
+      return n.data?.text ?? 'System update'
+    default:
+      return 'Notification'
+  }
+}
+
+async function loadHeaderProfile() {
+  avatarUrl.value = null
+  profileUsername.value = null
+  if (!user.value?.id) return
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('username, avatar_url')
+    .eq('id', user.value.id)
+    .maybeSingle()
+  if (!error && data) {
+    avatarUrl.value = data.avatar_url ?? null
+    profileUsername.value = data.username ?? null
+  }
+}
+
+async function loadNotifs() {
+  if (!user.value?.id) {
+    notifs.value = []
+    return
+  }
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', user.value.id)
+    .order('created_at', { ascending: false })
+    .limit(20)
+  if (!error) notifs.value = data ?? []
+}
+
+function destroyNotifChannel() {
+  if (!notifChannel) return
+  void supabase.removeChannel(notifChannel)
+  notifChannel = null
+}
+
+function bindNotifChannel() {
+  destroyNotifChannel()
+  const uid = user.value?.id
+  if (!uid) return
+  notifChannel = supabase
+    .channel(`notif-feed:${uid}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${uid}` },
+      payload => {
+        notifs.value.unshift(payload.new)
+      }
+    )
+    .subscribe()
+}
+
+async function markAllRead() {
+  if (!user.value?.id) return
+  const readAt = new Date().toISOString()
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read_at: readAt })
+    .eq('user_id', user.value.id)
+    .is('read_at', null)
+  if (!error) {
+    notifs.value = notifs.value.map(n => ({ ...n, read_at: readAt }))
+  }
+}
+
+function toggleNotifs() {
+  panelOpen.value = !panelOpen.value
+  if (panelOpen.value) {
+    userMenu.value = false
+    menuOpen.value = false
+  }
+}
+
+function toggleUserMenu() {
+  userMenu.value = !userMenu.value
+  if (userMenu.value) {
+    panelOpen.value = false
+    menuOpen.value = false
+  }
+}
+
+function onDocClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.auth-actions')) userMenu.value = false
+  if (!target.closest('.notif-root')) panelOpen.value = false
+}
+
+function onProfileUpdated(e: Event) {
+  const detail = (e as CustomEvent).detail || {}
+  if ('username' in detail) profileUsername.value = detail.username || null
+  if ('avatar_url' in detail) avatarUrl.value = detail.avatar_url || null
+}
+
+function onNotifsUpdated() {
+  void loadNotifs()
+}
 
 async function handleSignOut() {
   menuOpen.value = false
+  userMenu.value = false
+  panelOpen.value = false
   await signOut()
   await router.push('/')
 }
+
+watch(() => user.value?.id, () => {
+  void loadHeaderProfile()
+  void loadNotifs()
+  bindNotifChannel()
+}, { immediate: true })
+
+onMounted(() => {
+  document.addEventListener('click', onDocClick)
+  window.addEventListener('profile:updated', onProfileUpdated)
+  window.addEventListener('notifications:updated', onNotifsUpdated)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDocClick)
+  window.removeEventListener('profile:updated', onProfileUpdated)
+  window.removeEventListener('notifications:updated', onNotifsUpdated)
+  destroyNotifChannel()
+})
 </script>

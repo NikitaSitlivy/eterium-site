@@ -110,8 +110,22 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="section mx-auto p-6 max-w-md mt-10">
-    <h1 class="text-2xl font-semibold mb-4">Reset password</h1>
+  <main class="eter-page">
+    <div class="eter-frame">
+      <section class="eter-section eter-hero">
+        <div class="eter-hero-panel">
+          <div class="eter-hero-content">
+            <div>
+              <div class="eter-eyebrow">Account</div>
+              <h1 class="eter-title">Reset password</h1>
+              <p class="eter-subtitle">Create a new password or request a fresh reset link.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    <section class="eter-section eter-content">
+    <div class="eter-panel reset-panel">
     <p v-if="loading" class="opacity-70">Loading…</p>
 
     <div v-else>
@@ -172,6 +186,16 @@ onMounted(async () => {
         <p v-if="infoMsg" class="text-green-400 text-sm">{{ infoMsg }}</p>
       </form>
     </div>
+    </div>
+    </section>
+    </div>
   </main>
 </template>
 
+<style scoped>
+.reset-panel {
+  width: min(520px, 100%);
+  margin: 0 auto;
+  padding: 28px;
+}
+</style>

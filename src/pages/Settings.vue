@@ -112,13 +112,25 @@ async function deleteAccount() {
 </script>
 
 <template>
-  <main class="p-6 section mx-auto mt-10">
+  <main class="eter-page settings-page">
+    <div class="eter-frame">
     <UiSpinner :overlay="true" :open="loading || deleting" label="Working…" />
-    <h1 class="text-2xl font-extrabold mb-4">Settings</h1>
+    <section class="eter-section eter-hero">
+      <div class="eter-hero-panel">
+        <div class="eter-hero-content">
+          <div>
+            <div class="eter-eyebrow">Control</div>
+            <h1 class="eter-title">Settings</h1>
+            <p class="eter-subtitle">Manage account security, preferences, and profile data.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
+    <section class="eter-section eter-content">
     <div class="grid gap-4 md:grid-cols-2">
       <!-- Account -->
-      <section class="glass-card glass-panel p-6 flex flex-col gap-3">
+      <section class="eter-panel p-6 flex flex-col gap-3">
         <h2 class="font-semibold mb-1">Account</h2>
         <div class="text-sm text-white/80">Email: <b>{{ email || '—' }}</b></div>
 
@@ -133,7 +145,7 @@ async function deleteAccount() {
       </section>
 
       <!-- Preferences -->
-      <section class="glass-card glass-panel p-6 flex flex-col gap-4">
+      <section class="eter-panel p-6 flex flex-col gap-4">
         <h2 class="font-semibold">Preferences</h2>
         <label class="flex items-center gap-2 text-sm">
           <input type="checkbox" v-model="prefs.systemNotifs" class="accent-eter-accent" />
@@ -149,7 +161,7 @@ async function deleteAccount() {
       </section>
 
       <!-- Danger zone -->
-      <section class="glass-card glass-panel p-6 md:col-span-2">
+      <section class="eter-panel p-6 md:col-span-2">
         <h2 class="font-semibold mb-3 text-red-300">Danger zone</h2>
         <p class="text-sm text-white/70">
           This action deletes your profile record and signs you out. Full auth account deletion requires a server-side admin action.
@@ -162,6 +174,8 @@ async function deleteAccount() {
 
     <p v-if="msg" class="text-green-300/90 text-sm mt-4">{{ msg }}</p>
     <p v-if="err" class="text-red-400 text-sm mt-4">{{ err }}</p>
+    </section>
+    </div>
 
     <UiPopup
       :open="confirmDelete"

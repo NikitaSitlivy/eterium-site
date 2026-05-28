@@ -1,9 +1,21 @@
 <template>
-  <main class="section py-20">
-    <div class="max-w-3xl mx-auto glass-card glass-panel p-8 md:p-10 rounded-2xl border border-white/10 shadow-2xl">
-      <h1 class="text-4xl font-extrabold mb-6 text-white bg-gradient-to-r from-eter-accent to-purple-400 bg-clip-text text-transparent">
-        Privacy Policy
-      </h1>
+  <main class="eter-page">
+    <div class="eter-frame">
+      <section class="eter-section eter-hero">
+        <div class="eter-hero-panel">
+          <div class="eter-hero-content">
+            <div>
+              <div class="eter-eyebrow">Privacy</div>
+              <h1 class="eter-title">Privacy Policy</h1>
+              <p class="eter-subtitle">How Eterium collects, uses, and protects account data.</p>
+            </div>
+            <RouterLink to="/" class="eter-btn">Back to Home</RouterLink>
+          </div>
+        </div>
+      </section>
+
+      <section class="eter-section eter-content">
+    <div class="max-w-3xl mx-auto eter-panel p-8 md:p-10">
 
       <div class="space-y-8 text-white/85 leading-relaxed">
         <section>
@@ -111,7 +123,8 @@
         </section>
       </div>
 
-      <RouterLink to="/" class="cta mt-10 inline-block">Back to Home</RouterLink>
+    </div>
+      </section>
     </div>
   </main>
 </template>

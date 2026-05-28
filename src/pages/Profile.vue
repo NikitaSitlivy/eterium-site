@@ -351,11 +351,15 @@ onMounted(loadProfile);
 </script>
 
 <template>
-  <main class="p-6 section mx-auto mt-10">
+  <main class="eter-page eter-frame profile-page">
     <UiSpinner :overlay="true" :open="pending" label="Loading profile…" />
 
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-semibold">Profile</h1>
+    <div class="profile-hero eter-hero-panel">
+      <div>
+        <div class="eter-eyebrow">{{ isPublicView ? 'Public profile' : 'Profile' }}</div>
+        <h1 class="eter-title">{{ displayName }}</h1>
+        <p class="eter-subtitle">{{ profile.bio || 'Eterium player profile.' }}</p>
+      </div>
 
       <div class="flex items-center gap-2">
         <button
@@ -393,9 +397,9 @@ onMounted(loadProfile);
     <p v-if="err" class="err mt-3">{{ err }}</p>
     <p v-if="msg" class="ok mt-3">{{ msg }}</p>
 
-    <section v-if="!err" class="mt-5 grid gap-6 md:grid-cols-[380px,1fr]">
+    <section v-if="!err" class="profile-grid">
       <!-- LEFT -->
-      <div class="card p-6 glass-card glass-panel card-max-h">
+      <div class="eter-panel p-6 card-max-h">
         <div class="flex flex-col items-center">
           <img
             v-if="profile.avatar_url"
@@ -464,7 +468,7 @@ onMounted(loadProfile);
       </div>
 
       <!-- RIGHT -->
-      <div class="card p-6 glass-card glass-panel">
+      <div class="eter-panel p-6">
         <h2 class="title-lg mb-4">About</h2>
 
         <dl class="meta" v-if="!editMode">
@@ -644,6 +648,27 @@ onMounted(loadProfile);
 .link{ color:#cfe0ff; text-decoration:underline dotted; transition:color .2s; }
 .link:hover{ color:#fff; }
 
+.profile-page {
+  padding-top: 24px;
+  padding-bottom: 34px;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 34px 36px;
+}
+
+.profile-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  margin-top: 24px;
+  padding: 0 24px;
+}
+
 /* == CARD == */
 .card{
   border:1px solid rgba(255,255,255,.10);
@@ -725,4 +750,22 @@ onMounted(loadProfile);
 .badge-rare{ background:rgba(110,170,255,.18); color:#cfe3ff; border:1px solid rgba(110,170,255,.35); }
 .badge-uncommon{ background:rgba(90,210,140,.18); color:#c6ffd9; border:1px solid rgba(90,210,140,.35); }
 .badge-common{ background:rgba(255,255,255,.08); color:rgba(255,255,255,.9); border:1px solid rgba(255,255,255,.16); }
+
+@media (max-width: 1024px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .profile-hero {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 28px 20px;
+  }
+
+  .profile-grid {
+    padding: 0 8px;
+  }
+}
 </style>

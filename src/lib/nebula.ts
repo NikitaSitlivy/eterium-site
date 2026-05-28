@@ -59,7 +59,6 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
       blending: THREE.AdditiveBlending,
       vertexShader: `
         // Один полноэкранный треугольник (координаты уже в clip-space)
-        attribute vec3 position;
         void main() {
           gl_Position = vec4(position.xy, 0.0, 1.0);
         }
