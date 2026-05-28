@@ -176,7 +176,7 @@ import './assets/styles/home.css'
 const router = useRouter()
 const route = useRoute()
 const nebulaAllowed = ref(false)
-const showNebulaCanvas = computed(() => nebulaAllowed.value && route.path === '/')
+const showNebulaCanvas = computed(() => false)
 function clamp01(v: number) { return Math.max(0, Math.min(1, v)) }
 
 function setOrbitFromScroll() {
