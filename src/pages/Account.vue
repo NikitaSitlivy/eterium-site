@@ -8,6 +8,7 @@ import UiSpinner from "../components/UiSpinner.vue";
 import UiPopup from "../components/UiPopup.vue";
 import AvatarRules from "../components/AvatarRules.vue";
 import AvatarDropzone from "../components/AvatarDropzone.vue";
+import CyberPanel from "../components/site/CyberPanel.vue";
 
 /* ------------ auth / router ------------ */
 const router = useRouter();
@@ -537,13 +538,35 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="p-6 section mx-auto mt-10 account-page">
+  <div class="home-page account-page">
     <UiSpinner
       :overlay="true"
       :open="pageLoading || pending"
       label="Working…"
     />
-    <div class="flex justify-between items-center">
+    <div class="home-shell-frame account-frame">
+      <section class="home-section account-hero">
+        <CyberPanel tone="strong" class="account-hero__panel">
+          <div class="account-hero__content">
+            <div>
+              <div class="eyebrow section-label">Profile</div>
+              <h1 class="account-title">Account Core</h1>
+              <p class="section-copy account-subtitle">
+                Manage your Eterium profile, avatar, friends, achievements, and inventory.
+              </p>
+            </div>
+            <RouterLink to="/users" class="btn btn-secondary account-find-btn">
+              <svg viewBox="0 0 24 24" fill="none" class="account-btn-icon">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.5" />
+                <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+              Find players
+            </RouterLink>
+          </div>
+        </CyberPanel>
+      </section>
+
+    <div class="account-legacy-heading">
       <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">Account Core</h1>
       <div class="mt-3 flex items-center gap-2">
         <RouterLink to="/users" class="nav-cta">
@@ -573,24 +596,24 @@ onMounted(async () => {
         </RouterLink>
       </div>
     </div>
-    <div v-if="!isAuthed && !pageLoading" class="mt-4 text-white/80">
+    <div v-if="!isAuthed && !pageLoading" class="home-section account-empty">
       You are not signed in.
     </div>
 
-    <section v-else class="mt-4 grid gap-6 md:grid-cols-[320px,1fr] account-shell">
+    <section v-else class="home-section account-shell">
       <!-- LEFT -->
-      <div class="card p-4 glass-card glass-panel card-fc account-card">
+      <CyberPanel tone="accent" interactive class="panel-pad card-fc account-card account-sidebar">
         <div class="flex flex-col items-center gap-4">
           <img
             v-if="avatarSrc"
             :src="avatarSrc"
             alt="avatar"
-            class="w-28 h-28 rounded-full object-cover border border-white/10"
+            class="account-avatar"
             referrerpolicy="no-referrer"
           />
           <div
             v-else
-            class="w-28 h-28 rounded-full grid place-items-center border border-white/10 text-xl font-semibold bg-white/5"
+            class="account-avatar account-avatar--placeholder"
           >
             {{
               (profile.username || email.split("@")[0] || "U")
@@ -633,7 +656,7 @@ onMounted(async () => {
 
           <button
             type="button"
-            class="glass-btn comet account-side-btn w-full"
+            class="btn btn-ghost account-side-btn"
             :disabled="!profile.avatar_url"
             @click="removeAvatar"
           >
@@ -643,7 +666,7 @@ onMounted(async () => {
             Remove avatar
           </button>
 
-          <button type="button" class="glass-btn comet account-side-btn w-full" @click="sendResetPassword">
+          <button type="button" class="btn btn-ghost account-side-btn" @click="sendResetPassword">
             <svg viewBox="0 0 24 24" class="ico">
               <path d="M12 5v6l4 2M12 3a9 9 0 109 9" />
             </svg>
@@ -652,7 +675,7 @@ onMounted(async () => {
 
           <button
             type="button"
-            class="glass-btn comet account-side-btn account-side-btn--danger w-full"
+            class="btn btn-ghost account-side-btn account-side-btn--danger"
             @click="doLogout"
           >
             <svg viewBox="0 0 24 24" class="ico">
@@ -663,22 +686,22 @@ onMounted(async () => {
             Log out
           </button>
         </div>
-      </div>
+      </CyberPanel>
 
       <!-- RIGHT -->
-      <div class="card p-4 md:p-6 glass-card glass-panel account-card">
-        <div class="flex flex-wrap items-start justify-between gap-3">
+      <CyberPanel tone="default" interactive class="panel-pad account-card account-main">
+        <div class="account-section-head">
           <div>
-            <h2 class="text-lg font-semibold">Profile settings</h2>
+            <h2 class="panel-title">Profile settings</h2>
             <p class="text-xs text-white/55 mt-1">Manage public profile and avatar</p>
           </div>
           <span
             v-if="email"
-            class="text-xs px-2 py-1 rounded-full border"
+            class="account-status"
             :class="
               emailVerified
-                ? 'border-green-400/40 text-green-300'
-                : 'border-amber-400/40 text-amber-300'
+                ? 'account-status--ok'
+                : 'account-status--warn'
             "
           >
             {{ emailVerified ? "Email verified" : "Email not verified" }}
@@ -690,7 +713,7 @@ onMounted(async () => {
             <div class="text-xs text-white/70">You have unsaved settings changes</div>
             <div class="flex items-center gap-2">
               <button
-                class="glass-btn comet account-cancel-btn"
+                class="btn btn-ghost account-cancel-btn"
                 @click="
                   form.username = profile.username;
                   form.avatar_url = profile.avatar_url;
@@ -699,7 +722,7 @@ onMounted(async () => {
               >
                 Cancel
               </button>
-              <button class="glass-btn comet account-save-btn" @click="saveProfile">
+              <button class="btn btn-primary account-save-btn" @click="saveProfile">
                 Save changes
               </button>
             </div>
@@ -752,7 +775,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="sep my-6"></div>
-        <h3 class="text-base font-semibold mb-3">Avatar</h3>
+        <h3 class="account-block-title">Avatar</h3>
         <AvatarRules v-model="acknowledged" class="mb-3" />
         <AvatarDropzone
           :disabled="!acknowledged"
@@ -762,7 +785,7 @@ onMounted(async () => {
         />
 
         <div class="sep my-6"></div>
-        <h3 class="text-base font-semibold mb-3">Highlights</h3>
+        <h3 class="account-block-title">Highlights</h3>
         <div class="hl-grid mb-6">
           <div v-for="h in highlights" :key="h.label" class="hl-card">
             <div class="hl-label">{{ h.label }}</div>
@@ -789,7 +812,7 @@ onMounted(async () => {
         </div>
 
         <!-- ===== FRIENDS SECTION ===== -->
-        <h3 class="text-base font-semibold mb-3">Friends</h3>
+        <h3 class="account-block-title">Friends</h3>
         <div v-if="friendsLoading" class="text-white/60 text-sm">
           Loading friends…
         </div>
@@ -902,7 +925,7 @@ onMounted(async () => {
         </div>
         <div class="sep my-6"></div>
 
-        <h3 class="text-base font-semibold mb-3">Achievements</h3>
+        <h3 class="account-block-title">Achievements</h3>
         <div class="ach-body">
           <div v-if="achLoading" class="ach-grid">
             <div v-for="n in 6" :key="n" class="ach-tile ach-skeleton"></div>
@@ -937,8 +960,9 @@ onMounted(async () => {
 
         <p v-if="msg" class="text-green-300/90 text-sm mt-3">{{ msg }}</p>
         <p v-if="err" class="text-red-400 text-sm mt-3">{{ err }}</p>
-      </div>
+      </CyberPanel>
     </section>
+    </div>
 
     <UiPopup
       :open="errPopupOpen"
@@ -948,7 +972,7 @@ onMounted(async () => {
       variant="danger"
       @close="errPopupOpen = false"
     />
-  </main>
+  </div>
 </template>
 
 <style scoped>
@@ -1512,6 +1536,256 @@ onMounted(async () => {
   .settings-savebar {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+.account-page {
+  padding-bottom: 34px;
+}
+
+.account-frame {
+  padding-top: 2px;
+}
+
+.account-legacy-heading {
+  display: none;
+}
+
+.account-hero {
+  margin-top: 0;
+}
+
+.account-hero__panel {
+  min-height: 220px;
+}
+
+.account-hero__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 34px 36px;
+}
+
+.account-title {
+  margin: 0;
+  max-width: 620px;
+  color: #f6f2ff;
+  font-family: Rajdhani, Orbitron, 'Arial Narrow', system-ui, sans-serif;
+  font-size: clamp(42px, 4.4vw, 64px);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.038em;
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.18);
+}
+
+.account-subtitle {
+  max-width: 560px;
+}
+
+.account-shell {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.account-sidebar,
+.account-main {
+  min-height: 100%;
+}
+
+.account-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-avatar {
+  width: 118px;
+  height: 118px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 61, 242, 0.34);
+  object-fit: cover;
+  box-shadow:
+    0 0 24px rgba(255, 61, 242, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.account-avatar--placeholder {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 61, 242, 0.28), transparent 58%),
+    linear-gradient(180deg, rgba(18, 16, 30, 0.96), rgba(10, 12, 20, 0.98));
+  color: #fff;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.account-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.account-status--ok {
+  border-color: rgba(112, 255, 176, 0.34);
+  color: #aaffcc;
+  background: rgba(38, 138, 82, 0.12);
+}
+
+.account-status--warn {
+  border-color: rgba(255, 202, 95, 0.38);
+  color: #ffdf92;
+  background: rgba(170, 116, 34, 0.12);
+}
+
+.account-block-title {
+  margin: 0 0 12px;
+  color: #f1c4ff;
+  font-family: Rajdhani, Orbitron, system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-empty {
+  padding: 26px 28px;
+  border: 1px solid rgba(158, 91, 255, 0.35);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(20, 22, 40, 0.9), rgba(8, 10, 18, 0.95));
+  color: rgba(246, 242, 255, 0.82);
+}
+
+.account-page .btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: auto;
+  min-height: 46px;
+  height: 46px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  color: var(--text);
+  overflow: hidden;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.account-page .btn::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  pointer-events: none;
+}
+
+.account-page .btn::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.account-page .btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.account-page .btn-secondary {
+  border-color: rgba(40, 216, 255, 0.68);
+  background: linear-gradient(180deg, rgba(10, 48, 62, 0.9), rgba(4, 20, 30, 0.96));
+  color: #e9fbff;
+  box-shadow:
+    inset 0 0 0 1px rgba(40, 216, 255, 0.1),
+    0 0 18px rgba(40, 216, 255, 0.14),
+    inset 0 -14px 24px rgba(0, 0, 0, 0.34);
+}
+
+.account-page .btn-primary {
+  border-color: rgba(255, 77, 240, 0.72);
+  background: linear-gradient(180deg, rgba(88, 18, 76, 0.92), rgba(32, 8, 34, 0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 77, 240, 0.12),
+    0 0 18px rgba(255, 77, 240, 0.18),
+    inset 0 -14px 24px rgba(0, 0, 0, 0.32);
+}
+
+.account-page .btn-ghost {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(18, 22, 34, 0.9), rgba(7, 10, 18, 0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 12px rgba(255, 255, 255, 0.03),
+    inset 0 -14px 24px rgba(0, 0, 0, 0.28);
+}
+
+.account-find-btn {
+  min-width: 190px;
+}
+
+.account-btn-icon,
+.account-side-btn .ico {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.account-side-btn {
+  width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+}
+
+@media (max-width: 1024px) {
+  .account-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .account-hero__content {
+    min-height: 260px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    padding: 28px 20px;
+  }
+
+  .account-find-btn {
+    width: 100% !important;
+  }
+
+  .account-page .btn {
+    width: 100%;
+  }
+
+  .ach-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

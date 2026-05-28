@@ -196,13 +196,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="p-6 section mx-auto mt-10">
+  <main class="eter-page users-page">
+    <div class="eter-frame">
+      <section class="eter-section eter-hero">
     <UiSpinner :overlay="true" :open="pending" label="Loading users…" />
 
-    <div class="head">
-      <h1 class="text-2xl font-extrabold">Users</h1>
+    <div class="head eter-hero-panel users-hero">
+      <div>
+        <div class="eter-eyebrow">Players</div>
+        <h1 class="eter-title">Users</h1>
+      </div>
       <div class="tools">
-        <div class="search glass-base">
+        <div class="search">
           <svg class="ico" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="7" />
             <path d="M20 20l-3.5-3.5" />
@@ -221,13 +226,16 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+      </section>
+
+    <section class="eter-section eter-content">
 
     <p v-if="err" class="err mt-3">{{ err }}</p>
 
     <!-- Empty state -->
     <div
       v-if="!err && total === 0 && !pending"
-      class="empty glass-card glass-panel"
+      class="empty eter-panel"
     >
       <div class="empty-icon">👤</div>
       <div class="empty-title">No users found</div>
@@ -241,7 +249,7 @@ onMounted(async () => {
       <article
         v-for="u in items"
         :key="u.id"
-        class="user-card glass-card glass-panel"
+        class="user-card eter-panel"
       >
         <div class="row">
           <img v-if="u.avatar_url" :src="u.avatar_url" alt="" class="avatar" />
@@ -367,6 +375,8 @@ onMounted(async () => {
         Next
       </button>
     </div>
+    </section>
+    </div>
   </main>
 </template>
 
@@ -381,6 +391,10 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  padding: 34px 36px;
+}
+.users-hero {
+  min-height: 180px;
 }
 .tools {
   display: flex;
@@ -392,11 +406,18 @@ onMounted(async () => {
   position: relative;
   display: flex;
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 6px 10px;
-  min-width: 260px;
-  background: rgba(255, 255, 255, 0.04);
+  width: 360px;
+  height: 46px;
+  border: 1px solid rgba(158, 91, 255, 0.36);
+  border-radius: 10px;
+  padding: 0 14px;
+  background:
+    radial-gradient(120% 100% at 10% -30%, rgba(255, 61, 242, 0.12), rgba(255, 61, 242, 0) 62%),
+    linear-gradient(180deg, rgba(18, 20, 34, 0.88), rgba(8, 10, 18, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 14px rgba(158, 91, 255, 0.12);
+  z-index: 1;
 }
 .search .ico {
   width: 18px;
@@ -407,13 +428,26 @@ onMounted(async () => {
   stroke-width: 1.5;
   margin-right: 6px;
 }
-.search-input {
-  background: transparent;
+.users-page .search input.search-input {
+  height: 100%;
+  background: transparent !important;
   outline: none;
-  border: none;
+  border: 0 !important;
   color: #fff;
   width: 100%;
   font-size: 14px;
+  box-shadow: none !important;
+  padding: 0 !important;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.users-page .search input.search-input:focus {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+.users-page .search input.search-input::placeholder {
+  color: rgba(246, 242, 255, 0.54);
 }
 .meta .count {
   font-size: 13px;
@@ -456,6 +490,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 136px;
 }
 .row {
   display: flex;
@@ -499,6 +534,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
 }
 .link {
   color: #cfe0ff;
@@ -546,14 +582,38 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  border-radius: 9999px;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.03);
-  padding: 0.35rem 0.7rem;
-  font-size: 13px;
+  padding: 0 0.7rem !important;
+  clip-path: none !important;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: none;
+  box-shadow: none !important;
+  white-space: nowrap;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.12s ease;
+}
+.btn::before,
+.btn::after {
+  content: none !important;
+}
+.btn:hover {
+  border-color: rgba(40, 216, 255, 0.38);
+  background: rgba(40, 216, 255, 0.08);
+  transform: translateY(-1px);
 }
 .btn.small {
-  padding: 0.25rem 0.55rem;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 0.6rem !important;
   font-size: 12px;
 }
 .badge {
@@ -594,5 +654,19 @@ onMounted(async () => {
 .nav-cta:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+  .head {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 28px 20px;
+  }
+
+  .tools,
+  .search {
+    width: 100%;
+    min-width: 0;
+  }
 }
 </style>

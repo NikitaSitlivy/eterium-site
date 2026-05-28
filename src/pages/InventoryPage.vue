@@ -1,31 +1,43 @@
 <template>
-  <main class="container mx-auto px-4 py-8 mt-10 section">
-    <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-semibold">Inventory</h1>
-      <div v-if="loading" class="text-white/60">Loading…</div>
-    </div>
-
-    <div v-if="!isAuthed && !loading" class="card p-6 text-center glass-card glass-panel">
-      <p class="mb-4">Sign in to view your inventory.</p>
-      <button class="cta" @click="$emit('signin')">Sign in</button>
-    </div>
-
-    <div v-else-if="items.length === 0 && !loading" class="card p-6 text-center glass-card glass-panel">
-<p class="mb-2">You don't have any items yet.</p>
-<p class="text-white/60">Earn items in-game or get them from events.</p>
-    </div>
-
-    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      <div v-for="it in items" :key="it.key" class="card p-4 flex flex-col gap-3 glass-card glass-panel">
-        <div class="aspect-square w-full overflow-hidden rounded-xl bg-black/40 grid place-items-center">
-          <img :src="it.icon_url" :alt="it.name" class="w-3/4 h-3/4 object-contain" loading="lazy" />
+  <main class="eter-page">
+    <div class="eter-frame">
+      <section class="eter-section eter-hero">
+        <div class="eter-hero-panel">
+          <div class="eter-hero-content">
+            <div>
+              <div class="eter-eyebrow">Collection</div>
+              <h1 class="eter-title">Inventory</h1>
+              <p class="eter-subtitle">Browse items earned from games, drops, and events.</p>
+            </div>
+            <div v-if="loading" class="eter-muted">Loading...</div>
+          </div>
         </div>
-        <div class="flex items-center justify-between">
-          <div class="font-medium truncate">{{ it.name }}</div>
-          <span :class="['px-2 py-0.5 rounded text-xs uppercase', rarityClass(it.rarity)]">{{ it.rarity }}</span>
+      </section>
+
+      <section class="eter-section eter-content">
+        <div v-if="!isAuthed && !loading" class="eter-panel p-6 text-center">
+          <p class="mb-4">Sign in to view your inventory.</p>
+          <button class="cta" @click="$emit('signin')">Sign in</button>
         </div>
-      <div class="text-xs text-white/60">Acquired: {{ formatDate(it.acquired_at) }}</div>
-      </div>
+
+        <div v-else-if="items.length === 0 && !loading" class="eter-panel p-6 text-center">
+          <p class="mb-2">You don't have any items yet.</p>
+          <p class="text-white/60">Earn items in-game or get them from events.</p>
+        </div>
+
+        <div v-else class="inventory-grid">
+          <div v-for="it in items" :key="it.key" class="eter-panel inventory-card">
+            <div class="inventory-art">
+              <img :src="it.icon_url" :alt="it.name" loading="lazy" />
+            </div>
+            <div class="inventory-meta">
+              <div class="inventory-name" :title="it.name">{{ it.name }}</div>
+              <span :class="['inventory-rarity', rarityClass(it.rarity)]">{{ it.rarity }}</span>
+            </div>
+            <div class="text-xs text-white/60">Acquired: {{ formatDate(it.acquired_at) }}</div>
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 </template>
@@ -76,16 +88,16 @@ const items = computed(() =>
 
 type Rarity = 'common'|'uncommon'|'rare'|'epic'|'legendary'
 function rarityClass(r: Rarity | string) {
-  if (r === 'legendary') return 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-  if (r === 'epic') return 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-  if (r === 'rare') return 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-  if (r === 'uncommon') return 'bg-green-500/20 text-green-300 border border-green-500/30'
-  return 'bg-white/10 text-white/80 border border-white/10'
+  if (r === 'legendary') return 'rarity-legendary'
+  if (r === 'epic') return 'rarity-epic'
+  if (r === 'rare') return 'rarity-rare'
+  if (r === 'uncommon') return 'rarity-uncommon'
+  return 'rarity-common'
 }
 
 function formatDate(iso: string) {
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
+  if (Number.isNaN(d.getTime())) return '-'
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
@@ -93,7 +105,6 @@ function formatDate(iso: string) {
   const mm = String(d.getMinutes()).padStart(2, '0')
   return `${dd}.${m}.${y} ${hh}:${mm}`
 }
-
 
 onMounted(async () => {
   const { data: auth } = await supabase.auth.getUser()
@@ -116,6 +127,76 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.card { @apply bg-white/5 rounded-2xl shadow-lg shadow-black/20 border border-white/10; }
-.cta { @apply inline-flex items-center justify-center px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-black font-medium transition; }
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.inventory-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.inventory-art {
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.inventory-art img {
+  width: 74%;
+  height: 74%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55));
+}
+
+.inventory-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.inventory-name {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inventory-rarity {
+  flex: 0 0 auto;
+  border-radius: 6px;
+  padding: 0.22rem 0.5rem;
+  font-size: 10px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.rarity-legendary { background: rgba(255, 210, 90, 0.18); color: #ffe18a; border: 1px solid rgba(255, 210, 90, 0.35); }
+.rarity-epic { background: rgba(170, 120, 255, 0.18); color: #decbff; border: 1px solid rgba(170, 120, 255, 0.35); }
+.rarity-rare { background: rgba(110, 170, 255, 0.18); color: #cfe3ff; border: 1px solid rgba(110, 170, 255, 0.35); }
+.rarity-uncommon { background: rgba(90, 210, 140, 0.18); color: #c6ffd9; border: 1px solid rgba(90, 210, 140, 0.35); }
+.rarity-common { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 0.16); }
+
+@media (min-width: 768px) {
+  .inventory-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .inventory-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
 </style>

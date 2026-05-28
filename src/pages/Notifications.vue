@@ -29,9 +29,14 @@ async function load() {
       const { data } = await supabase.auth.getUser()
       userId.value = data.user?.id ?? null
     }
+    if (!userId.value) {
+      items.value = []
+      return
+    }
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
+      .eq('user_id', userId.value)
       .order('created_at', { ascending: false })
       .limit(100)
     if (error) throw error
@@ -44,12 +49,15 @@ async function load() {
 }
 
 async function markAllRead() {
+  if (!userId.value) return
+  const readAt = new Date().toISOString()
   try {
     const { error } = await supabase
       .from('notifications')
-      .update({ read_at: new Date().toISOString() })
+      .update({ read_at: readAt })
+      .eq('user_id', userId.value)
       .is('read_at', null)
-    if (!error) items.value = items.value.map(n => ({ ...n, read_at: new Date().toISOString() as any }))
+    if (!error) items.value = items.value.map(n => ({ ...n, read_at: readAt as any }))
     else err.value = error.message || 'Failed to mark read'
     // Notify header to refresh its notifications/unread counter
     window.dispatchEvent(new Event('notifications:updated'))
@@ -60,13 +68,23 @@ onMounted(load)
 </script>
 
 <template>
-  <main class="p-6 section mx-auto mt-10">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-extrabold">Notifications</h1>
-      <button class="nav-cta" @click="markAllRead" :disabled="unreadCount===0">Mark all read</button>
-    </div>
+  <main class="eter-page">
+    <div class="eter-frame">
+      <section class="eter-section eter-hero">
+        <div class="eter-hero-panel">
+          <div class="eter-hero-content">
+            <div>
+              <div class="eter-eyebrow">Inbox</div>
+              <h1 class="eter-title">Notifications</h1>
+              <p class="eter-subtitle">{{ unreadCount }} unread update{{ unreadCount===1?'':'s' }}</p>
+            </div>
+            <button class="nav-cta" @click="markAllRead" :disabled="unreadCount===0">Mark all read</button>
+          </div>
+        </div>
+      </section>
 
-    <div class="mt-4 glass-card glass-panel p-4 md:p-6">
+    <section class="eter-section eter-content">
+    <div class="eter-panel p-4 md:p-6">
       <p v-if="err" class="text-red-400">{{ err }}</p>
       <div v-else-if="!loading && items.length === 0" class="text-center text-white/80">No notifications yet.</div>
       <div v-else class="">
@@ -79,6 +97,8 @@ onMounted(load)
           </div>
         </div>
       </div>
+    </div>
+    </section>
     </div>
   </main>
 </template>

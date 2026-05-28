@@ -1,8 +1,20 @@
 <template>
-  <div class="section py-24">
-    <h1 class="text-4xl font-extrabold mb-4">Support Eterium</h1>
-    <p class="text-white/70 mb-6">Detailed tiers and rewards will appear here soon.</p>
-    <RouterLink to="/" class="cta">Back to Home</RouterLink>
+  <div class="eter-page">
+    <div class="eter-frame">
+      <section class="eter-section eter-hero">
+        <div class="eter-hero-panel">
+          <div class="eter-hero-content">
+            <div>
+              <div class="eter-eyebrow">Support</div>
+              <h1 class="eter-title">Support Eterium</h1>
+              <p class="eter-subtitle">Detailed tiers and rewards will appear here soon.</p>
+            </div>
+            <RouterLink to="/" class="eter-btn">Back to Home</RouterLink>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
+
 <script setup lang="ts"></script>

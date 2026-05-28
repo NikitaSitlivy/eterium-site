@@ -476,9 +476,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="p-6 section mx-auto mt-16">
-    <div class="flex gap-4 h-[calc(100vh-110px)]">
-      <aside class="w-72 shrink-0 glass-card glass-panel p-3 flex flex-col">
+  <main class="eter-page messages-page">
+    <div class="eter-frame">
+    <section class="eter-section messages-shell">
+    <div class="flex gap-4 h-[calc(100vh-150px)]">
+      <aside class="w-72 shrink-0 eter-panel p-3 flex flex-col">
         <div class="flex items-center justify-between mb-3">
           <h1 class="text-lg font-semibold">Messages</h1>
           <span class="text-xs text-white/40">{{ conversations.length }} chat{{ conversations.length===1?'':'s' }}</span>
@@ -525,7 +527,7 @@ onBeforeUnmount(() => {
         </div>
       </aside>
 
-      <section class="flex-1 glass-card glass-panel flex flex-col min-w-0">
+      <section class="flex-1 eter-panel flex flex-col min-w-0">
         <header class="px-4 py-3 border-b border-white/5 flex items-center gap-3">
           <div class="flex-1">
             <div class="text-sm font-semibold">
@@ -588,10 +590,20 @@ onBeforeUnmount(() => {
         </footer>
       </section>
     </div>
+    </section>
+    </div>
   </main>
 </template>
 
 <style scoped>
+.messages-page {
+  padding-top: 24px;
+}
+
+.messages-shell {
+  padding-top: 0;
+}
+
 .conv-item{
   width:100%;
   text-align:left;
@@ -636,5 +648,22 @@ onBeforeUnmount(() => {
   font-size:.625rem;
   color: rgba(255,255,255,.3);
   margin-top:.15rem;
+}
+
+@media (max-width: 767px) {
+  .messages-shell > div {
+    height: auto;
+    min-height: calc(100vh - 130px);
+    flex-direction: column;
+  }
+
+  aside {
+    width: 100%;
+    max-height: 280px;
+  }
+
+  .msg {
+    max-width: 86%;
+  }
 }
 </style>
