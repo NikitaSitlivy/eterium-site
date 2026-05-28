@@ -42,8 +42,8 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
     const uniforms = {
       uTime:       { value: 0.0 },
       uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-      uIntensity:  { value: 0.95 },         // яркость дымки
-      uNoiseScale: { value: 1.6 },          // зернистость облаков
+      uIntensity:  { value: 0.42 },         // яркость дымки
+      uNoiseScale: { value: 2.15 },         // зернистость облаков
       uTilt:       { value: -0.28 },        // общий наклон
       uSpinSpeed:  { value: 0.03 },         // скорость вращения
       uDrift:      { value: new THREE.Vector2(0.02, -0.012) }, // течение шума
@@ -95,12 +95,13 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
 
         // изогнутый «рукав» галактики с шумной шириной
         float lane(vec2 p, float baseW, float curveK, float phase){
-          float curve = sin(p.x * curveK + phase) * 0.12;
+          float curve = sin(p.x * curveK + phase) * 0.07;
           float dist  = abs(p.y + curve);
           // ширина варьируется вдоль x (fbm даёт «вздутия» и «сужения»)
           float w = baseW * (0.65 + 0.55 * clamp(fbm(vec2(p.x*0.6 + phase*0.7, 3.1+phase)) * 0.5 + 0.5, 0.0, 1.0));
-          float core = smoothstep(w*1.7, w*1.0, dist) * smoothstep(w*0.9, w*0.22, dist);
-          return core;
+          float broad = smoothstep(w*2.4, w*0.55, dist);
+          float dust = smoothstep(w*0.35, w*1.45, dist);
+          return broad * dust;
         }
 
         void main(){
@@ -117,8 +118,8 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
           vec2 np = (rot(spin*0.7) * p) * uNoiseScale + uDrift * uTime;
 
           // ДВА РУКАВА разной ширины/кривизны и фазы
-          float laneA = lane(pSpin, 0.23, 3.2, uTime*0.18);
-          float laneB = lane(pSpin + vec2(0.05, 0.0), 0.34, 2.35, -uTime*0.12 + 2.1);
+          float laneA = lane(pSpin + vec2(0.28, -0.08), 0.42, 1.45, uTime*0.10);
+          float laneB = lane(pSpin + vec2(-0.34, 0.12), 0.56, 1.12, -uTime*0.08 + 2.1);
 
           // ОБЛАЧНЫЕ ПЯТНА (большие газовые скопления)
           float blobs = 0.0;
@@ -129,9 +130,9 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
           float d0 = length(pSpin - c0);
           float d1 = length(pSpin - c1);
           float d2 = length(pSpin - c2);
-          blobs += smoothstep(0.85, 0.10, d0);
-          blobs += smoothstep(1.00, 0.18, d1)*0.8;
-          blobs += smoothstep(1.10, 0.22, d2)*0.7;
+          blobs += smoothstep(1.05, 0.20, d0) * 0.55;
+          blobs += smoothstep(1.20, 0.28, d1) * 0.42;
+          blobs += smoothstep(1.35, 0.34, d2) * 0.34;
 
           // Мелкомасштабная облачность (fbm)
           float clouds = fbm(np + uTime*0.02)*0.6 + fbm(np*1.7 - uTime*0.018 + 7.3)*0.4;
@@ -139,8 +140,9 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
 
           // Сборка плотности: рукава + blobs, модулированные облаками
           float density = (laneA*0.85 + laneB*0.75);
-          density = max(density, blobs*0.55);
-          density *= (0.55 + 0.45*clouds);
+          density = max(density, blobs*0.5);
+          density *= (0.34 + 0.66*clouds);
+          density = pow(max(0.0, density), 1.45);
 
           // Экранная виньетка (мягкая, эллиптическая)
           float vign = smoothstep(1.45, 0.15, length(p*vec2(0.58, 1.0)));
@@ -180,7 +182,35 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
   root.add(fsNebula.mesh)
 
   // ---------- Stars ----------
-  const COUNT = 18000
+  // Seeded distribution keeps the sky stable between reloads while allowing
+  // natural clustering, sparse voids, and a subtle galactic plane.
+  function mulberry32(seed: number) {
+    return function rand() {
+      seed |= 0
+      seed = seed + 0x6D2B79F5 | 0
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed)
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t
+      return ((t ^ t >>> 14) >>> 0) / 4294967296
+    }
+  }
+  const rand = mulberry32(0xE73A91)
+  function signedPow(v: number, p: number) {
+    return Math.sign(v) * Math.pow(Math.abs(v), p)
+  }
+  function gaussian() {
+    const u = Math.max(1e-6, rand())
+    const v = Math.max(1e-6, rand())
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(Math.PI * 2 * v)
+  }
+  function randomSphere(radiusMin: number, radiusMax: number) {
+    const r = radiusMin + (radiusMax - radiusMin) * Math.pow(rand(), 0.25)
+    const th = rand() * Math.PI * 2
+    const z = rand() * 2 - 1
+    const s = Math.sqrt(Math.max(0, 1 - z * z))
+    return new THREE.Vector3(r * s * Math.cos(th), r * s * Math.sin(th), r * z)
+  }
+
+  const COUNT = 26000
   const positions = new Float32Array(COUNT * 3)
   const colors = new Float32Array(COUNT * 3)
   const sizes = new Float32Array(COUNT)
@@ -188,26 +218,60 @@ export function initNebula(canvas: HTMLCanvasElement): NebulaHandle {
   const seeds = new Float32Array(COUNT)
   const tmpColor = new THREE.Color()
 
-  for (let i = 0; i < COUNT; i++) {
-    const r = 52 + 28 * Math.random()
-    const th = Math.random() * Math.PI * 2
-    const ph = Math.acos(Math.random() * 2 - 1)
-    positions[i * 3 + 0] = r * Math.sin(ph) * Math.cos(th)
-    positions[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th)
-    positions[i * 3 + 2] = r * Math.cos(ph)
+  const clusterCenters = Array.from({ length: 18 }, () => randomSphere(58, 82))
 
-    const warm = Math.random() < 0.35
-    const h = warm ? 0.08 + Math.random() * 0.05 : 0.58 + Math.random() * 0.10
-    const s = warm ? 0.65 : 0.55
-    const l = warm ? 0.62 : 0.64
-    tmpColor.setHSL(h, s, l)
+  for (let i = 0; i < COUNT; i++) {
+    const mode = rand()
+    let p: THREE.Vector3
+
+    if (mode < 0.58) {
+      // Deep background: mostly tiny, isotropic stars with a few empty pockets.
+      p = randomSphere(54, 88)
+      const voidA = p.clone().normalize().dot(new THREE.Vector3(-0.32, 0.74, 0.58))
+      const voidB = p.clone().normalize().dot(new THREE.Vector3(0.78, -0.18, -0.52))
+      if ((voidA > 0.86 || voidB > 0.9) && rand() < 0.78) p.multiplyScalar(1.35)
+    } else if (mode < 0.88) {
+      // Galactic plane: denser band with uneven thickness and slight warp.
+      const x = signedPow(rand() * 2 - 1, 0.72) * 88
+      const z = signedPow(rand() * 2 - 1, 0.9) * 46
+      const warp = Math.sin(x * 0.035 + z * 0.025) * 3.2
+      const y = gaussian() * (1.7 + Math.abs(x) * 0.018) + warp
+      p = new THREE.Vector3(x, y, z)
+      p.applyAxisAngle(new THREE.Vector3(0, 0, 1), -0.18)
+      p.applyAxisAngle(new THREE.Vector3(1, 0, 0), 0.22)
+      p.normalize().multiplyScalar(58 + rand() * 30)
+    } else {
+      // Open clusters: small uneven groups, not decorative dots.
+      const center = clusterCenters[Math.floor(rand() * clusterCenters.length)]
+      const spread = 1.4 + rand() * 4.8
+      p = center.clone().add(new THREE.Vector3(gaussian(), gaussian(), gaussian()).multiplyScalar(spread))
+    }
+
+    positions[i * 3 + 0] = p.x
+    positions[i * 3 + 1] = p.y
+    positions[i * 3 + 2] = p.z
+
+    const temp = rand()
+    if (temp < 0.12) {
+      tmpColor.setHSL(0.06 + rand() * 0.035, 0.42 + rand() * 0.18, 0.62 + rand() * 0.14)
+    } else if (temp < 0.78) {
+      tmpColor.setHSL(0.60 + rand() * 0.045, 0.16 + rand() * 0.20, 0.72 + rand() * 0.16)
+    } else {
+      tmpColor.setHSL(0.56 + rand() * 0.08, 0.34 + rand() * 0.26, 0.64 + rand() * 0.18)
+    }
     colors[i * 3 + 0] = tmpColor.r
     colors[i * 3 + 1] = tmpColor.g
     colors[i * 3 + 2] = tmpColor.b
 
-    sizes[i] = Math.pow(Math.random(), 0.65) * 1.6 + 0.6
-    phases[i] = Math.random() * Math.PI * 2
-    seeds[i] = Math.random()
+    const bright = rand() > 0.982
+    const medium = !bright && rand() > 0.86
+    sizes[i] = bright
+      ? 2.8 + rand() * 2.2
+      : medium
+        ? 1.35 + rand() * 1.25
+        : 0.32 + Math.pow(rand(), 2.2) * 1.05
+    phases[i] = rand() * Math.PI * 2
+    seeds[i] = rand()
   }
 
   const starsGeo = new THREE.BufferGeometry()

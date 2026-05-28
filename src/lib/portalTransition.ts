@@ -13,7 +13,7 @@ export async function playPortalJump() {
   jumpInProgress = true
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const duration = reduceMotion ? 120 : 950
+  const duration = reduceMotion ? 120 : 1280
 
   portalJumpActive.value = true
   await sleep(duration)

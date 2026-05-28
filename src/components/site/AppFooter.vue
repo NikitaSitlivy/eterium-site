@@ -2,7 +2,7 @@
   <footer class="app-footer home-shell">
     <div class="app-footer__inner">
       <RouterLink class="brand-mark brand-mark--footer" to="/" aria-label="Eterium home">
-        <img class="brand-mark__logo brand-mark__logo--footer" src="/media/eterium-logo.svg" alt="Eterium" />
+        <img class="brand-mark__logo brand-mark__logo--footer" src="/media/eterium-logo-mini.svg" alt="Eterium" />
         <span class="brand-mark__meta">&copy; 2026</span>
       </RouterLink>
 
