@@ -1,6 +1,5 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
-import { supabase } from './lib/superbase'
 import { playPortalJump } from './lib/portalTransition'
 
 const Home = () => import('./pages/Home.vue')
@@ -52,6 +51,7 @@ router.beforeEach(async (to, from) => {
   if (!to.meta?.auth) return true
 
 
+  const { supabase } = await import('./lib/superbase')
   const { data: sessionData } = await supabase.auth.getSession()
   if (!sessionData.session) {
     return { path: '/login', query: { redirect: to.fullPath } }
