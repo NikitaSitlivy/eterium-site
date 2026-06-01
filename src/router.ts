@@ -1,8 +1,8 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 import { playPortalJump } from './lib/portalTransition'
+import Home from './pages/Home.vue'
 
-const Home = () => import('./pages/Home.vue')
 const Support = () => import('./pages/Support.vue')
 const Agassu = () => import('./pages/Agassu.vue')
 const Legal = () => import('./pages/Legal.vue')

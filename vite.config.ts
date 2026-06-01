@@ -10,17 +10,11 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    modulePreload: {
-      resolveDependencies(_filename, deps) {
-        return deps.filter((dep) => (
-          !dep.includes('vendor-supabase') &&
-          !dep.includes('vendor-three')
-        ))
-      }
-    },
+    modulePreload: false,
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes('vite/preload-helper')) return 'vendor-misc'
           if (!id.includes('node_modules')) return
 
           if (id.includes('/three/')) return 'vendor-three'
