@@ -2,9 +2,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { playPortalJump } from './lib/portalTransition'
 import Home from './pages/Home.vue'
+import Agassu from './pages/Agassu.vue'
 
 const Support = () => import('./pages/Support.vue')
-const Agassu = () => import('./pages/Agassu.vue')
 const Legal = () => import('./pages/Legal.vue')
 const Privacy = () => import('./pages/Privacy.vue')
 const Account = () => import('./pages/Account.vue')
@@ -45,7 +45,7 @@ export const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   if (to.path === '/games/agassu' && from.path !== '/games/agassu') {
-    await playPortalJump()
+    void playPortalJump()
   }
 
   if (!to.meta?.auth) return true

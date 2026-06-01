@@ -41,7 +41,7 @@
             - click and play.
           </p>
           <div class="hero-actions">
-            <RouterLink class="btn btn-primary btn-hero" to="/games/agassu">Enter the Portal</RouterLink>
+            <a class="btn btn-primary btn-hero" href="/games/agassu" @click="enterPortal">Enter the Portal</a>
             <a class="btn btn-secondary btn-hero" href="#why">Play Instantly</a>
           </div>
           <div class="hero-chips">
@@ -61,11 +61,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import CyberPanel from './CyberPanel.vue'
 import FeatureChip from './FeatureChip.vue'
 
 const showHeroImage = ref(true)
+const router = useRouter()
 const heroPortal = '/media/hero/agassu-hero-lcp.jpg'
 const heroPortalWebpSrcset = [
   '/media/hero/agassu-hero-480.webp 480w',
@@ -79,4 +80,13 @@ const chips = [
   { label: 'WebGPU powered', icon: 'gpu', tone: 'cyan' },
   { label: 'Cross-device', icon: 'grid', tone: 'default' }
 ] as const
+
+function enterPortal(event: MouseEvent) {
+  event.preventDefault()
+  window.requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      void router.push('/games/agassu')
+    }, 0)
+  })
+}
 </script>

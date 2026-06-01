@@ -267,7 +267,6 @@ async function bindAuthEvents() {
 onMounted(() => {
   evaluateNebulaCapability()
   if (route.path === '/reset') void bindAuthEvents()
-  else runAfterStartup(() => { void bindAuthEvents() })
 })
 
 watch(showNebulaCanvas, (enabled) => {
@@ -460,7 +459,7 @@ async function logout() {
   background:
     radial-gradient(ellipse at 50% 52%, rgba(32, 18, 58, 0.16), rgba(4, 5, 10, 0.86) 64%, rgba(0, 0, 0, 0.98) 100%),
     rgba(0, 0, 0, 0.72);
-  animation: portalOverlayFade 1280ms cubic-bezier(.16,.78,.28,1) both;
+  animation: portalOverlayFade 140ms cubic-bezier(.16,.78,.28,1) both;
 }
 
 .portal-jump-bg {
@@ -471,8 +470,7 @@ async function logout() {
     radial-gradient(ellipse at 50% 52%, rgba(244, 192, 255, 0.22), rgba(171, 78, 255, 0.18) 15%, rgba(63, 139, 255, 0.09) 34%, rgba(0, 0, 0, 0) 58%),
     radial-gradient(ellipse at 44% 56%, rgba(255, 76, 238, 0.18), rgba(0, 0, 0, 0) 42%),
     radial-gradient(ellipse at 56% 48%, rgba(78, 173, 255, 0.12), rgba(0, 0, 0, 0) 46%);
-  filter: blur(18px) saturate(1.2);
-  animation: portalFieldZoom 1280ms cubic-bezier(.16,.78,.28,1) both;
+  animation: portalFieldZoom 140ms cubic-bezier(.16,.78,.28,1) both;
 }
 
 .portal-jump-vortex,
@@ -505,10 +503,8 @@ async function logout() {
       rgba(85, 205, 255, 0.12) 302deg,
       rgba(0, 0, 0, 0) 360deg
     );
-  filter: blur(7px);
   opacity: 0;
-  mix-blend-mode: screen;
-  animation: portalVortex 1280ms cubic-bezier(.16,.78,.28,1) both;
+  animation: portalVortex 140ms cubic-bezier(.16,.78,.28,1) both;
 }
 
 .portal-jump-lensing {
@@ -523,7 +519,7 @@ async function logout() {
     0 0 36px rgba(233, 117, 255, 0.36),
     0 0 94px rgba(78, 173, 255, 0.18);
   opacity: 0;
-  animation: portalLens 1280ms cubic-bezier(.16,.78,.28,1) both;
+  animation: portalLens 140ms cubic-bezier(.16,.78,.28,1) both;
 }
 
 .portal-jump-core {
@@ -538,7 +534,7 @@ async function logout() {
     0 0 46px rgba(206, 110, 255, 0.72),
     0 0 132px rgba(106, 160, 255, 0.32);
   opacity: 0;
-  animation: portalCoreDive 1280ms cubic-bezier(.14,.82,.26,1) both;
+  animation: portalCoreDive 140ms cubic-bezier(.14,.82,.26,1) both;
 }
 
 .portal-jump-ring {
@@ -555,7 +551,7 @@ async function logout() {
   width: 300px;
   height: 380px;
   clip-path: polygon(12% 0, 85% 2%, 100% 18%, 96% 82%, 82% 100%, 16% 96%, 0 78%, 4% 16%);
-  animation: portalRingWarp 1280ms cubic-bezier(.14,.82,.26,1) both;
+  animation: portalRingWarp 140ms cubic-bezier(.14,.82,.26,1) both;
 }
 
 .ring-b {
@@ -563,8 +559,8 @@ async function logout() {
   height: 500px;
   border-color: rgba(133, 186, 255, 0.46);
   clip-path: polygon(16% 2%, 76% 0, 100% 24%, 92% 78%, 70% 100%, 18% 94%, 0 72%, 7% 18%);
-  animation: portalRingWarp 1280ms cubic-bezier(.14,.82,.26,1) both;
-  animation-delay: 80ms;
+  animation: portalRingWarp 140ms cubic-bezier(.14,.82,.26,1) both;
+  animation-delay: 30ms;
 }
 
 .ring-c {
@@ -572,8 +568,8 @@ async function logout() {
   height: 285px;
   border-color: rgba(255, 226, 184, 0.52);
   clip-path: polygon(20% 0, 84% 8%, 98% 35%, 90% 88%, 62% 100%, 8% 78%, 0 24%);
-  animation: portalInnerRing 1280ms cubic-bezier(.14,.82,.26,1) both;
-  animation-delay: 30ms;
+  animation: portalInnerRing 140ms cubic-bezier(.14,.82,.26,1) both;
+  animation-delay: 15ms;
 }
 
 .portal-jump-streaks {
@@ -589,9 +585,8 @@ async function logout() {
     rgba(0, 0, 0, 0) 2.2deg 10deg
   );
   mask-image: radial-gradient(ellipse at 50% 52%, transparent 0 16%, rgba(0,0,0,.92) 25%, transparent 74%);
-  filter: blur(0.8px);
   opacity: 0;
-  animation: portalStreaksDive 1280ms cubic-bezier(.14,.82,.26,1) both;
+  animation: portalStreaksDive 140ms cubic-bezier(.14,.82,.26,1) both;
 }
 
 .portal-jump-dust {
@@ -606,15 +601,13 @@ async function logout() {
     radial-gradient(circle at 38% 54%, rgba(255,255,255,.45) 0 1px, transparent 1.2px);
   background-size: 62px 62px, 84px 84px, 74px 74px, 46px 46px;
   opacity: 0;
-  mix-blend-mode: screen;
-  animation: portalDustIn 1280ms cubic-bezier(.16,.78,.28,1) both;
+  animation: portalDustIn 140ms cubic-bezier(.16,.78,.28,1) both;
 }
 
 .dust-b {
   width: 980px;
   height: 980px;
   background-size: 96px 96px, 128px 128px, 110px 110px, 72px 72px;
-  filter: blur(0.7px);
   animation-name: portalDustFar;
 }
 
@@ -628,15 +621,14 @@ async function logout() {
     radial-gradient(ellipse at 50% 52%, rgba(255,255,255,0.98) 0 8%, rgba(236, 170, 255, 0.5) 12%, rgba(0,0,0,0) 34%),
     rgba(255, 255, 255, 0);
   opacity: 0;
-  animation: portalFlash 1280ms cubic-bezier(.16,.78,.28,1) both;
+  animation: portalFlash 140ms cubic-bezier(.16,.78,.28,1) both;
 }
 
 @keyframes portalOverlayFade {
-  0% { opacity: 0; backdrop-filter: blur(0); }
+  0% { opacity: 0; }
   10% { opacity: 1; }
-  48% { backdrop-filter: blur(2px) saturate(1.1); }
-  78% { opacity: 1; backdrop-filter: blur(8px) saturate(1.35); }
-  100% { opacity: 0; backdrop-filter: blur(14px) saturate(1.5); }
+  78% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 @keyframes portalFieldZoom {
@@ -654,11 +646,11 @@ async function logout() {
 }
 
 @keyframes portalLens {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.42) rotate(-4deg); filter: blur(8px); }
-  14% { opacity: .9; filter: blur(2px); }
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.42) rotate(-4deg); }
+  14% { opacity: .9; }
   52% { opacity: 1; transform: translate(-50%, -50%) scale(1.05) rotate(4deg); }
-  82% { opacity: .96; transform: translate(-50%, -50%) scale(3.2) rotate(16deg); filter: blur(1px); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(7.2) rotate(24deg); filter: blur(10px); }
+  82% { opacity: .96; transform: translate(-50%, -50%) scale(3.2) rotate(16deg); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(7.2) rotate(24deg); }
 }
 
 @keyframes portalCoreDive {
@@ -670,11 +662,11 @@ async function logout() {
 }
 
 @keyframes portalRingWarp {
-  0% { transform: translate(-50%, -50%) scale(.42) rotate(-8deg); opacity: 0; filter: blur(4px); }
-  14% { opacity: .9; filter: blur(0); }
+  0% { transform: translate(-50%, -50%) scale(.42) rotate(-8deg); opacity: 0; }
+  14% { opacity: .9; }
   48% { transform: translate(-50%, -50%) scale(1.06) rotate(22deg); opacity: .96; }
   82% { transform: translate(-50%, -50%) scale(3.5) rotate(82deg); opacity: .58; }
-  100% { transform: translate(-50%, -50%) scale(8.2) rotate(122deg); opacity: 0; filter: blur(8px); }
+  100% { transform: translate(-50%, -50%) scale(8.2) rotate(122deg); opacity: 0; }
 }
 
 @keyframes portalInnerRing {
