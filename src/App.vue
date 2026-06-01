@@ -265,7 +265,6 @@ async function bindAuthEvents() {
   authStateSub = sub?.subscription ?? null
 }
 onMounted(() => {
-  window.addEventListener('keydown', onKey)
   evaluateNebulaCapability()
   if (route.path === '/reset') void bindAuthEvents()
   else runWhenIdle(() => { void bindAuthEvents() })
@@ -302,6 +301,14 @@ const submitError = ref('')
 const submitInfo = ref('')
 const showVerifyPopup = ref(false)
 const pending = ref(false)
+
+watch(authOpen, (open) => {
+  if (open) {
+    window.addEventListener('keydown', onKey)
+    return
+  }
+  window.removeEventListener('keydown', onKey)
+})
 
 function tabClass(k: Mode) {
   return [
