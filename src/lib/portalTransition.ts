@@ -14,7 +14,7 @@ export async function playPortalJump() {
   try {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const lowPower = document.documentElement.classList.contains('low-power')
-    const duration = reduceMotion || lowPower ? 120 : 1280
+    const duration = reduceMotion || lowPower ? 80 : 140
 
     portalJumpActive.value = true
     await sleep(duration)
