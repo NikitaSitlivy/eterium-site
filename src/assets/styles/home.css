@@ -96,8 +96,6 @@ body {
 
 .home-section {
   margin-top: 24px;
-  content-visibility: auto;
-  contain-intrinsic-size: 680px;
 }
 
 .section-grid,
