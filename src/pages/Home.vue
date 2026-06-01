@@ -124,14 +124,15 @@
         </div>
       </section>
 
-      <section id="prologue" class="home-section prologue-cta">
+      <section id="prologue" ref="prologueSection" class="home-section prologue-cta">
         <CyberPanel tone="strong" class="prologue-cta__panel">
           <div class="prologue-cta__media" aria-hidden="true">
-            <picture v-if="showPrologueImage">
+            <picture v-if="loadPrologueImage && showPrologueImage">
               <img
                 :src="prologueRiftImage"
                 alt=""
                 loading="lazy"
+                fetchpriority="low"
                 decoding="async"
                 @error="showPrologueImage = false"
               />
@@ -158,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, ref } from 'vue'
+import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppFooter from '../components/site/AppFooter.vue'
 import CyberPanel from '../components/site/CyberPanel.vue'
@@ -167,8 +168,33 @@ import HeroSection from '../components/site/HeroSection.vue'
 const EnergyOrb = defineAsyncComponent(() => import('../components/site/EnergyOrb.vue'))
 const showEnergyImage = ref(true)
 const showPrologueImage = ref(true)
-const energyRiftImage = '/media/magic-ball/energy-rift.jpg'
-const prologueRiftImage = '/media/prologue-rift.jpg'
+const loadPrologueImage = ref(false)
+const prologueSection = ref<HTMLElement | null>(null)
+let prologueObserver: IntersectionObserver | null = null
+
+const energyRiftImage = '/media/magic-ball/energy-rift.webp'
+const prologueRiftImage = '/media/prologue-rift.webp'
+
+onMounted(() => {
+  const section = prologueSection.value
+  if (!section || !('IntersectionObserver' in window)) {
+    loadPrologueImage.value = true
+    return
+  }
+
+  prologueObserver = new IntersectionObserver((entries) => {
+    if (!entries.some((entry) => entry.isIntersecting)) return
+    loadPrologueImage.value = true
+    prologueObserver?.disconnect()
+    prologueObserver = null
+  }, { rootMargin: '180px 0px' })
+
+  prologueObserver.observe(section)
+})
+
+onBeforeUnmount(() => {
+  prologueObserver?.disconnect()
+})
 
 const stats = [
   { label: 'Instant startup', icon: 'bolt', tone: 'pink' },

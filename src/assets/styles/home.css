@@ -470,12 +470,17 @@ body {
   z-index: 0;
 }
 
+.hero-stage picture,
 .hero-stage__image,
 .hero-stage__overlay,
 .hero-stage__scan,
 .hero-stage__vignette {
   position: absolute;
   inset: 0;
+}
+
+.hero-stage picture {
+  display: block;
 }
 
 .hero-stage__image {
@@ -1342,8 +1347,7 @@ body {
 .section-image-bg--support {
   background:
     linear-gradient(180deg, rgba(8, 11, 20, 0.52), rgba(8, 11, 20, 0.88)),
-    radial-gradient(circle at 26% 20%, rgba(255, 61, 242, 0.08), transparent 36%),
-    url('/media/prologue-rift.jpg') center/cover no-repeat;
+    radial-gradient(circle at 26% 20%, rgba(255, 61, 242, 0.08), transparent 36%);
   opacity: 0.34;
 }
 

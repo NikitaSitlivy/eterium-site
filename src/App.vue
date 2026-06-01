@@ -212,7 +212,7 @@ function runWhenIdle(cb: () => void) {
 }
 
 function runAfterStartup(cb: () => void) {
-  window.setTimeout(() => runWhenIdle(cb), 1800)
+  window.setTimeout(() => runWhenIdle(cb), 7000)
 }
 
 async function initNebulaLazy() {
@@ -267,7 +267,7 @@ async function bindAuthEvents() {
 onMounted(() => {
   evaluateNebulaCapability()
   if (route.path === '/reset') void bindAuthEvents()
-  else runWhenIdle(() => { void bindAuthEvents() })
+  else runAfterStartup(() => { void bindAuthEvents() })
 })
 
 watch(showNebulaCanvas, (enabled) => {

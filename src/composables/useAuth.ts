@@ -5,6 +5,7 @@ const currentUser = ref<any>(null)
 const loading = ref(true)
 let authInitialized = false
 let authInitPromise: Promise<void> | null = null
+let authInitScheduled = false
 
 async function getSupabase() {
   const mod = await import('../lib/superbase')
@@ -20,6 +21,10 @@ function runWhenIdle(cb: () => void) {
     return
   }
   window.setTimeout(cb, 500)
+}
+
+function runAfterStartup(cb: () => void) {
+  window.setTimeout(() => runWhenIdle(cb), 7000)
 }
 
 async function loadSession() {
@@ -51,7 +56,10 @@ async function ensureAuthInitialized() {
 
 export function useAuth() {
   const isAuthed = computed(() => !!currentUser.value?.id)
-  runWhenIdle(() => { void ensureAuthInitialized() })
+  if (!authInitScheduled) {
+    authInitScheduled = true
+    runAfterStartup(() => { void ensureAuthInitialized() })
+  }
 
   const signUp = async (email: string, password: string) => {
     const supabase = await getSupabase()

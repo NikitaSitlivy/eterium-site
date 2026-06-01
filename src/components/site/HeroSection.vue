@@ -2,17 +2,23 @@
   <section class="hero-section home-shell">
     <CyberPanel tone="strong" class="hero-frame hero-panel">
       <div class="hero-stage" aria-hidden="true">
-        <img
-          v-if="showHeroImage"
-          class="hero-stage__image"
-          :src="heroPortal"
-          alt=""
-          width="1122"
-          height="1402"
-          fetchpriority="high"
-          decoding="async"
-          @error="showHeroImage = false"
-        />
+        <picture v-if="showHeroImage">
+          <source
+            type="image/webp"
+            :srcset="heroPortalWebpSrcset"
+            sizes="(max-width: 767px) 100vw, (max-width: 1200px) 70vw, 1122px"
+          />
+          <img
+            class="hero-stage__image"
+            :src="heroPortal"
+            alt=""
+            width="1122"
+            height="1402"
+            fetchpriority="high"
+            decoding="async"
+            @error="showHeroImage = false"
+          />
+        </picture>
         <div class="hero-stage__overlay"></div>
         <div class="hero-stage__scan"></div>
         <div class="hero-stage__vignette"></div>
@@ -61,6 +67,11 @@ import FeatureChip from './FeatureChip.vue'
 
 const showHeroImage = ref(true)
 const heroPortal = '/media/hero/agassu-hero-lcp.jpg'
+const heroPortalWebpSrcset = [
+  '/media/hero/agassu-hero-480.webp 480w',
+  '/media/hero/agassu-hero-768.webp 768w',
+  '/media/hero/agassu-hero-1122.webp 1122w'
+].join(', ')
 
 const chips = [
   { label: 'Instant startup', icon: 'bolt', tone: 'pink' },
