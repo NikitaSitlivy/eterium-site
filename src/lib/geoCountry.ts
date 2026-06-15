@@ -3,6 +3,25 @@ type GeoCountryResponse = {
 }
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+type BrowserGeoProvider = {
+  url: string
+  parseCountry: (data: unknown) => string | null
+}
+
+const browserGeoProviders: BrowserGeoProvider[] = [
+  {
+    url: 'https://api.country.is/',
+    parseCountry: (data) => normalizeCountry((data as { country?: string }).country),
+  },
+  {
+    url: 'https://ipwho.is/',
+    parseCountry: (data) => normalizeCountry((data as { country_code?: string }).country_code),
+  },
+  {
+    url: 'https://ipapi.co/json/',
+    parseCountry: (data) => normalizeCountry((data as { country_code?: string }).country_code),
+  },
+]
 
 export async function getIpCountry() {
   const functionCountry = await getIpCountryFromFunction()
@@ -20,20 +39,29 @@ async function getIpCountryFromFunction() {
     if (!response.ok) return null
 
     const data = await response.json() as GeoCountryResponse
-    return data.country?.toUpperCase() ?? null
+    return normalizeCountry(data.country)
   } catch {
     return null
   }
 }
 
 async function getIpCountryFromBrowser() {
-  try {
-    const response = await fetch('https://ipapi.co/json/')
-    if (!response.ok) return null
+  for (const provider of browserGeoProviders) {
+    try {
+      const response = await fetch(provider.url)
+      if (!response.ok) continue
 
-    const data = await response.json() as { country_code?: string }
-    return data.country_code?.toUpperCase() ?? null
-  } catch {
-    return null
+      const country = provider.parseCountry(await response.json())
+      if (country) return country
+    } catch {
+      continue
+    }
   }
+
+  return null
+}
+
+function normalizeCountry(country: string | undefined | null) {
+  const normalized = country?.trim().toUpperCase()
+  return normalized && /^[A-Z]{2}$/.test(normalized) ? normalized : null
 }
