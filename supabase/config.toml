@@ -1,0 +1,2 @@
+[functions.geo-country]
+verify_jwt = false

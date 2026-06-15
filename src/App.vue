@@ -127,7 +127,7 @@
                 <p v-if="submitError" class="text-red-400 text-sm">{{ submitError }}</p>
                 <p v-if="submitInfo" class="text-green-400 text-sm">{{ submitInfo }}</p>
 
-                <div class="pt-2">
+                <div v-if="showGoogleAuth" class="pt-2">
                   <div class="text-center text-xs uppercase tracking-wider text-white/50 mb-3">or continue with</div>
                   <div class="grid grid-cols-1">
                     <button type="button" class="glass-btn w-full auth-google-btn" @click="oauth('google')" :disabled="pending">
@@ -159,6 +159,32 @@
       <!-- Глобальный оверлей-спинер на время запросов -->
       <UiSpinner :overlay="true" :open="pending" :label="mode==='signin' ? 'Signing in…' : 'Working…'" />
     </div>
+
+    <Transition name="cookie-banner">
+      <aside
+        v-if="showCookieBanner"
+        class="cookie-consent"
+        role="dialog"
+        aria-live="polite"
+        aria-label="Cookie notice"
+      >
+        <div class="cookie-consent__copy">
+          <strong>Cookies</strong>
+          <span>
+            We use essential cookies and local storage for sign-in, security, and saved preferences.
+            Read our <RouterLink to="/privacy">Privacy Policy</RouterLink>.
+          </span>
+        </div>
+        <div class="cookie-consent__actions">
+          <button type="button" class="cookie-consent__button cookie-consent__button--ghost" @click="setCookieConsent('declined')">
+            Decline
+          </button>
+          <button type="button" class="cookie-consent__button" @click="setCookieConsent('accepted')">
+            Accept
+          </button>
+        </div>
+      </aside>
+    </Transition>
   </div>
 </template>
 
@@ -170,6 +196,7 @@ import { useAuth } from './composables/useAuth'
 import UiPopup from './components/UiPopup.vue'
 import UiSpinner from './components/UiSpinner.vue'
 import type { NebulaHandle } from './lib/nebula'
+import { getIpCountry } from './lib/geoCountry'
 import { portalJumpActive } from './lib/portalTransition'
 import './assets/styles/home.css'
 
@@ -194,6 +221,9 @@ let nebula: NebulaHandle | null = null
 let nebulaLoadCancelled = false
 let authStateSub: { unsubscribe: () => void } | null = null
 let nebulaScrollBound = false
+const cookieConsentKey = 'eterium_cookie_consent'
+const cookieConsent = ref<'accepted' | 'declined' | null>(null)
+const showCookieBanner = computed(() => cookieConsent.value === null)
 
 async function getSupabase() {
   const mod = await import('./lib/superbase')
@@ -266,6 +296,8 @@ async function bindAuthEvents() {
 }
 onMounted(() => {
   evaluateNebulaCapability()
+  loadCookieConsent()
+  void resolveGoogleAuthAvailability()
   if (route.path === '/reset') void bindAuthEvents()
 })
 
@@ -300,6 +332,74 @@ const submitError = ref('')
 const submitInfo = ref('')
 const showVerifyPopup = ref(false)
 const pending = ref(false)
+const userCountry = ref<string | null>(null)
+const countryResolved = ref(false)
+const showGoogleAuth = computed(() => {
+  if (countryResolved.value) return userCountry.value !== 'RU'
+  return !isRussianUser()
+})
+
+async function resolveGoogleAuthAvailability() {
+  userCountry.value = await getIpCountry()
+  countryResolved.value = true
+}
+
+function isRussianUser() {
+  const languages = [navigator.language, ...navigator.languages].filter(Boolean)
+  const hasRussianLocale = languages.some((language) => /^ru(?:-|$)/i.test(language))
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const russianTimeZones = new Set([
+    'Europe/Kaliningrad',
+    'Europe/Moscow',
+    'Europe/Simferopol',
+    'Europe/Kirov',
+    'Europe/Volgograd',
+    'Europe/Astrakhan',
+    'Europe/Saratov',
+    'Europe/Ulyanovsk',
+    'Europe/Samara',
+    'Asia/Yekaterinburg',
+    'Asia/Omsk',
+    'Asia/Novosibirsk',
+    'Asia/Barnaul',
+    'Asia/Tomsk',
+    'Asia/Novokuznetsk',
+    'Asia/Krasnoyarsk',
+    'Asia/Irkutsk',
+    'Asia/Chita',
+    'Asia/Yakutsk',
+    'Asia/Khandyga',
+    'Asia/Vladivostok',
+    'Asia/Ust-Nera',
+    'Asia/Magadan',
+    'Asia/Sakhalin',
+    'Asia/Srednekolymsk',
+    'Asia/Kamchatka',
+    'Asia/Anadyr'
+  ])
+
+  return hasRussianLocale || russianTimeZones.has(timeZone)
+}
+
+function loadCookieConsent() {
+  try {
+    const saved = window.localStorage.getItem(cookieConsentKey)
+    if (saved === 'accepted' || saved === 'declined') {
+      cookieConsent.value = saved
+    }
+  } catch {
+    cookieConsent.value = null
+  }
+}
+
+function setCookieConsent(nextConsent: 'accepted' | 'declined') {
+  cookieConsent.value = nextConsent
+  try {
+    window.localStorage.setItem(cookieConsentKey, nextConsent)
+  } catch {
+    // Keep the banner dismissed for the current session if storage is blocked.
+  }
+}
 
 watch(authOpen, (open) => {
   if (open) {
@@ -421,6 +521,7 @@ async function sendResetEmail() {
 async function oauth(provider: 'google' ) {
   submitError.value = ''
   submitInfo.value = ''
+  if (provider === 'google' && !showGoogleAuth.value) return
   try {
     pending.value = true
     const supabase = await getSupabase()
