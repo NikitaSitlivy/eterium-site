@@ -1,0 +1,17 @@
+/* The reference uses worn translucent paint, not opaque black chips. */
+.scene-copy h1{top:28px;font-size:clamp(120px,20vw,310px)}
+.scene-copy h1>span,
+.scene-copy h1>span:nth-child(2n),
+.scene-copy h1>span:nth-child(3n){
+  background:none;color:#ca2d24;opacity:.83;
+  -webkit-mask-image:url('/media/game/paint-wear.svg');mask-image:url('/media/game/paint-wear.svg');
+  mask-mode:luminance;-webkit-mask-size:190px 260px;mask-size:190px 260px;
+  -webkit-mask-position:0 0;mask-position:0 0;
+}
+.scene-copy h1>span:nth-child(2){mask-position:-47px -92px}
+.scene-copy h1>span:nth-child(3){mask-position:-109px -18px}
+.scene-copy h1>span:nth-child(4){mask-position:-26px -133px}
+.scene-copy h1>span:nth-child(5){mask-position:-132px -65px}
+.scene-copy h1>span:nth-child(6){mask-position:-81px -171px}
+@media(max-width:900px){.scene-copy h1{top:35px}}
+@media(max-width:540px){.scene-copy h1{top:52px;font-size:26vw}.scene-copy h1>span{mask-size:110px 160px;-webkit-mask-size:110px 160px}}

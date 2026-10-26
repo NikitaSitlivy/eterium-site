@@ -1,15 +1,16 @@
 <template>
   <header class="app-header">
+    <a class="rift-skip" href="#main-content">Skip to content</a>
     <div class="app-header__bar home-shell">
       <RouterLink class="brand-mark" to="/" aria-label="Eterium home">
-        <img class="brand-mark__logo" src="/media/eterium-logo-compressed.png" alt="Eterium" width="260" height="138" />
+        <span class="editorial-wordmark">AGASSU</span>
       </RouterLink>
 
       <nav class="app-header__nav" aria-label="Primary navigation">
-        <a v-for="item in navItems" :key="item.href" :href="item.href">{{ item.label }}</a>
+        <RouterLink v-for="item in navItems" :key="item.href" :to="item.href">{{ item.label }}</RouterLink>
       </nav>
 
-      <div class="app-header__actions">
+      <div class="app-header__actions"><RouterLink to="/support" class="studio-wordmark">ETERIUM</RouterLink>
         <template v-if="isAuthed">
           <div class="auth-actions">
             <button class="user-pill" type="button" @click.stop.prevent="toggleUserMenu">
@@ -110,9 +111,9 @@
     <transition name="home-fade">
       <div v-if="menuOpen" class="app-header__drawer home-shell">
         <nav class="app-header__drawer-nav" aria-label="Mobile navigation">
-          <a v-for="item in navItems" :key="`${item.href}-mobile`" :href="item.href" @click="menuOpen = false">
+          <RouterLink v-for="item in navItems" :key="`${item.href}-mobile`" :to="item.href" @click="menuOpen = false">
             {{ item.label }}
-          </a>
+          </RouterLink>
         </nav>
         <div class="app-header__drawer-actions">
           <template v-if="isAuthed">
@@ -138,10 +139,11 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useAuth } from '../../composables/useAuth'
 
 const navItems = [
-  { label: 'Games', href: '/#development' },
-  { label: 'Community', href: '/#why' },
-  { label: 'Devlog', href: '/#development' },
-  { label: 'Support', href: '/#support' }
+  
+  { label: 'World', href: '/#locations' },
+  {label:'Experience',href:'/#experience'},
+  { label: 'Development', href: '/#development' },
+  
 ]
 
 const router = useRouter()
@@ -281,6 +283,10 @@ function toggleUserMenu() {
   }
 }
 
+function closeMenusOnEscape(e: KeyboardEvent) {
+  if (e.key === 'Escape') { menuOpen.value = false; userMenu.value = false; panelOpen.value = false }
+}
+
 function onDocClick(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (!target.closest('.auth-actions')) userMenu.value = false
@@ -313,12 +319,14 @@ watch(() => user.value?.id, () => {
 
 onMounted(() => {
   document.addEventListener('click', onDocClick)
+  document.addEventListener('keydown', closeMenusOnEscape)
   window.addEventListener('profile:updated', onProfileUpdated)
   window.addEventListener('notifications:updated', onNotifsUpdated)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocClick)
+  document.removeEventListener('keydown', closeMenusOnEscape)
   window.removeEventListener('profile:updated', onProfileUpdated)
   window.removeEventListener('notifications:updated', onNotifsUpdated)
   void destroyNotifChannel()

@@ -1,8 +1,7 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
-import { playPortalJump } from './lib/portalTransition'
 import Home from './pages/Home.vue'
-import Agassu from './pages/Agassu.vue'
+const Agassu = () => import('./pages/Agassu.vue')
 
 const Support = () => import('./pages/Support.vue')
 const Legal = () => import('./pages/Legal.vue')
@@ -40,13 +39,14 @@ export const router = createRouter({
     { path: '/users', component: Usersage, meta: { auth: true }  },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
-  scrollBehavior() { return { left: 0, top: 0 } }
+  scrollBehavior(to, _from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash, top: 100 }
+    return { left: 0, top: 0 }
+  }
 })
 
-router.beforeEach(async (to, from) => {
-  if (to.path === '/games/agassu' && from.path !== '/games/agassu') {
-    void playPortalJump()
-  }
+router.beforeEach(async (to) => {
 
   if (!to.meta?.auth) return true
 
@@ -58,6 +58,20 @@ router.beforeEach(async (to, from) => {
   }
 
   return true
+})
+
+router.afterEach((to) => {
+  const metadata: Record<string, [string, string]> = {
+    '/': ['AGASSU — The stillness is misleading | Eterium', 'Интерактивный 3D-мир AGASSU: энергетический портал, THE BASIN, станция и погодный зал. Браузерный хоррор in development.'],
+    '/games/agassu': ['AGASSU — Explore the world | Eterium', 'Explore the world of AGASSU and discover development build 0.2.'],
+    '/support': ['Support AGASSU | Eterium', 'Follow the development of AGASSU and share the game with friends.']
+  }
+  const [title, description] = metadata[to.path] ?? ['Eterium — Account & community', 'Your Eterium account and community.']
+  document.title = title
+  document.documentElement.lang = 'en'
+  document.querySelector('meta[name="description"]')?.setAttribute('content', description)
+  document.querySelector('meta[property="og:title"]')?.setAttribute('content', title)
+  document.querySelector('meta[property="og:description"]')?.setAttribute('content', description)
 })
 
 export default router

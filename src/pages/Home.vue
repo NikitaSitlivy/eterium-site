@@ -1,218 +1,40 @@
 <template>
-  <div class="home-page">
-    <div class="home-shell-frame">
-      <HeroSection />
-
-      <section id="why" class="home-section">
-        <div class="section-grid two-col top-panels">
-          <CyberPanel tone="default" class="panel-pad why-panel">
-            <div class="eyebrow section-label">Why</div>
-            <h2 class="section-title">
-              <span class="title-nowrap">Browser-Native</span>
-              <br />
-              Is the Future
-            </h2>
-            <p class="section-copy">
-              WebGPU and modern WebGL unlock console-grade visuals on the web - with instant startup,
-              cross-device by design. No launchers. No drivers. Just click and play.
-            </p>
-            <div class="stats-grid">
-              <div v-for="stat in stats" :key="stat.label" class="stat-cell">
-                <FeatureChip :label="stat.label" :icon="stat.icon" :tone="stat.tone" />
-              </div>
-            </div>
-          </CyberPanel>
-
-          <CyberPanel tone="accent" interactive class="panel-pad players-panel">
-            <h3 class="panel-title">What It Means for Players</h3>
-            <div class="info-list">
-              <div v-for="item in playerBenefits" :key="item" class="info-list__item">
-                <span class="info-list__icon" aria-hidden="true">
-                  <svg viewBox="0 0 20 20">
-                    <path d="M10 2.5 15.8 5.7v8.6L10 17.5l-5.8-3.2V5.7Z" />
-                    <path d="m7.2 10.2 1.8 1.8 3.8-4.2" />
-                  </svg>
-                </span>
-                <span>{{ item }}</span>
-              </div>
-            </div>
-          </CyberPanel>
-        </div>
-      </section>
-
-      <section id="development" class="home-section">
-        <div class="section-grid split-col">
-          <CyberPanel tone="accent" interactive class="panel-pad development-panel">
-            <div class="eyebrow section-label">Agassu</div>
-            <h2 class="card-heading">
-              In Development
-            </h2>
-            <p class="section-copy">
-              A third-person co-op roguelike horror with dynamic progression between sessions.
-              Procedural tension. Team up to survive and evolve your build run after run.
-            </p>
-            <div class="status-line">Status: Pro-Demo (Coming Soon)</div>
-            <div class="button-row">
-              <RouterLink class="btn btn-primary" to="/games/agassu">View Game Page</RouterLink>
-              <a class="btn btn-secondary" href="#support">Follow Devlogs</a>
-            </div>
-          </CyberPanel>
-
-          <CyberPanel tone="strong" class="media-card image-panel">
-            <div class="media-stack">
-              <picture v-if="showEnergyImage">
-                <img
-                  :src="energyRiftImage"
-                  alt="Energy Rift preview"
-                  loading="lazy"
-                  decoding="async"
-                  @error="showEnergyImage = false"
-                />
-              </picture>
-              <EnergyOrb v-else quality="medium" />
-              <p class="caption">
-                Energy Rift preview. Final in-game portal VFX will be integrated during production.
-              </p>
-            </div>
-          </CyberPanel>
-        </div>
-      </section>
-
-      <section id="support" class="home-section">
-        <div class="support-layout">
-          <CyberPanel tone="default" interactive class="panel-pad support-panel">
-            <div class="section-image-bg section-image-bg--support" aria-hidden="true"></div>
-            <div class="eyebrow section-label">Support</div>
-            <h2 class="card-heading">
-              Support
-              <br />
-              The Project
-            </h2>
-            <p class="section-copy">
-              Eterium is for everyone - play and socialize right in the browser, regardless of your
-              PC. We are building a universe of games that launch instantly and bring people together.
-            </p>
-            <ul class="bullet-list">
-              <li>Founded based on your profile (future).</li>
-              <li>Early access to demos and playtests.</li>
-              <li>Exclusive profile backgrounds and cosmetics.</li>
-            </ul>
-            <div class="button-row">
-              <RouterLink class="btn btn-primary" to="/support">Become a Backer</RouterLink>
-              <a class="btn btn-secondary" href="#prologue">See Future Rewards</a>
-            </div>
-          </CyberPanel>
-
-          <CyberPanel tone="accent" interactive class="panel-pad support-way-panel">
-            <h3 class="panel-title">Choose Your Way</h3>
-            <div class="support-options">
-              <div v-for="option in supportOptions" :key="option.title" class="support-option">
-                <span class="support-option__icon" aria-hidden="true">
-                  <svg viewBox="0 0 20 20">
-                    <path d="M10 2.5 15.8 5.7v8.6L10 17.5l-5.8-3.2V5.7Z" />
-                    <path d="M6.5 10h7M10 6.5v7" />
-                  </svg>
-                </span>
-                <div class="support-option__copy">
-                  <strong>{{ option.title }}</strong>
-                  <span>{{ option.copy }}</span>
-                </div>
-              </div>
-            </div>
-            <p class="support-caption">Secure payments via Stripe or Ko-fi.</p>
-          </CyberPanel>
-        </div>
-      </section>
-
-      <section id="prologue" ref="prologueSection" class="home-section prologue-cta">
-        <CyberPanel tone="strong" class="prologue-cta__panel">
-          <div class="prologue-cta__media" aria-hidden="true">
-            <picture v-if="loadPrologueImage && showPrologueImage">
-              <img
-                :src="prologueRiftImage"
-                alt=""
-                loading="lazy"
-                fetchpriority="low"
-                decoding="async"
-                @error="showPrologueImage = false"
-              />
-            </picture>
-          </div>
-
-          <div class="prologue-cta__content">
-            <div>
-              <h2 class="cta-title">Play the Prologue</h2>
-              <p class="cta-copy">
-                Enter the First Rift and test a fast AGASSU vertical slice right in the browser.
-              </p>
-              <RouterLink class="btn btn-primary cta-button" to="/games/agassu">
-                Enter the First Rift →
-              </RouterLink>
-            </div>
-          </div>
-        </CyberPanel>
-      </section>
-
-      <AppFooter />
-    </div>
-  </div>
+<main ref="page" id="main-content" class="agassu-site reference-site">
+<GameShowcase ref="showcase" />
+<section class="manifesto">
+<h2>Beautifully<br />familiar.</h2>
+<p class="manifesto-note"><i></i>The unfamiliar<br />lives in<br />plain sight.</p>
+<p class="manifesto-copy"><i></i>Ordinary spaces.<br />Extraordinary unease.<br />AGASSU is a third-person liminal horror exploration game set in places that feel real,<br />but aren't quite right.</p>
+<img src="/media/game/station.webp" alt="An unsettling room in AGASSU" width="1280" height="720" loading="lazy" />
+<h2 class="manifesto-end">Deeply wrong.</h2>
+</section>
+<GameLocations />
+<section id="experience" class="core-experience">
+<div class="editorial-label"><b>03</b><span>Core experience</span><i></i></div>
+<div class="core-list"><article><i></i><div><h3>Explore</h3><p>Vast, interconnected spaces<br />that reward curiosity.</p></div></article><article><i></i><div><h3>Observe</h3><p>Find meaning in the subtle,<br />the displaced, the unexpected.</p></div></article><article><i></i><div><h3>Uncover</h3><p>Piece together a world<br />that shouldn't exist.</p></div></article></div>
+<span class="core-number" aria-hidden="true">03</span>
+<img src="/media/game/entity.webp" alt="A character confronts the unknown in AGASSU" width="1280" height="720" loading="lazy" />
+<p class="core-aside">Same<br />spaces.<br />Different<br />questions.<i></i></p>
+</section>
+<section id="development" class="editorial-development">
+<div class="editorial-label"><b>—</b><span>Development</span><small>A more uneasy tomorrow.</small></div>
+<div class="development-grid">
+<article><img src="/media/game/weather.webp" alt="AGASSU weather hall" width="1280" height="720" loading="lazy" /><h3>World</h3><h4>Real spaces. Altered perspective.</h4><p>Built from familiar places.<br />Reimagined into something else.</p></article>
+<article><img src="/media/game/station.webp" alt="Light and shadow around the portal" width="1280" height="720" loading="lazy" /><h3>Atmosphere</h3><h4>Tension in the ordinary.</h4><p>Lighting and space work together<br />to create a constant sense of unease.</p></article>
+<article><img src="/media/game/exterior.webp" alt="AGASSU's experimental exterior world" width="1280" height="800" loading="lazy" /><h3>Development</h3><h4>A world in progress.</h4><p>Built by Eterium.<br />AGASSU continues to evolve.</p></article>
+</div>
+</section>
+<section class="threshold"><img src="/media/game/basin.webp" alt="" width="1280" height="720" loading="lazy" /><h2>Cross the<br />threshold.</h2><button @click="showcase?.enter('portal')">Enter AGASSU <span>⟶</span></button><p>Familiar<br />places.<br />A different<br />reality.</p></section>
+<AppFooter />
+</main>
 </template>
-
 <script setup lang="ts">
-import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { ref } from 'vue'
+import { useEditorialMotion } from '../composables/useEditorialMotion'
+import GameShowcase from '../components/site/GameShowcase.vue'
+import GameLocations from '../components/site/GameLocations.vue'
 import AppFooter from '../components/site/AppFooter.vue'
-import CyberPanel from '../components/site/CyberPanel.vue'
-import FeatureChip from '../components/site/FeatureChip.vue'
-import HeroSection from '../components/site/HeroSection.vue'
-const EnergyOrb = defineAsyncComponent(() => import('../components/site/EnergyOrb.vue'))
-const showEnergyImage = ref(true)
-const showPrologueImage = ref(true)
-const loadPrologueImage = ref(false)
-const prologueSection = ref<HTMLElement | null>(null)
-let prologueObserver: IntersectionObserver | null = null
-
-const energyRiftImage = '/media/magic-ball/energy-rift.webp'
-const prologueRiftImage = '/media/prologue-rift.webp'
-
-onMounted(() => {
-  const section = prologueSection.value
-  if (!section || !('IntersectionObserver' in window)) {
-    loadPrologueImage.value = true
-    return
-  }
-
-  prologueObserver = new IntersectionObserver((entries) => {
-    if (!entries.some((entry) => entry.isIntersecting)) return
-    loadPrologueImage.value = true
-    prologueObserver?.disconnect()
-    prologueObserver = null
-  }, { rootMargin: '180px 0px' })
-
-  prologueObserver.observe(section)
-})
-
-onBeforeUnmount(() => {
-  prologueObserver?.disconnect()
-})
-
-const stats = [
-  { label: 'Instant startup', icon: 'bolt', tone: 'pink' },
-  { label: 'No installs', icon: 'hex', tone: 'default' },
-  { label: 'Cross-platform', icon: 'grid', tone: 'default' },
-  { label: 'GPU-powered', icon: 'gpu', tone: 'cyan' }
-] as const
-
-const playerBenefits = [
-  'Join friends in seconds with zero friction.',
-  'Smooth visuals powered by your GPU.',
-  'Play anywhere: desktop, laptop, and lower-end machines.',
-  'Social features baked in: parties, chat, profiles.'
-]
-
-const supportOptions = [
-  { title: 'One-time donation', copy: 'Pay what you want' },
-  { title: 'Monthly backer', copy: 'Support ongoing production' },
-  { title: 'Tip jar', copy: 'Drop a quick boost into the Rift' }
-]
+const showcase=ref<InstanceType<typeof GameShowcase>|null>(null)
+const page=ref<HTMLElement|null>(null)
+useEditorialMotion(page)
 </script>

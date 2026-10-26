@@ -1,21 +1,10 @@
 <template>
-  <footer class="app-footer home-shell">
-    <div class="app-footer__inner">
-      <RouterLink class="brand-mark brand-mark--footer" to="/" aria-label="Eterium home">
-        <img class="brand-mark__logo brand-mark__logo--footer" src="/media/eterium-logo-mini-compressed.png" alt="Eterium" width="96" height="112" />
-        <span class="brand-mark__meta">&copy; 2026</span>
-      </RouterLink>
-
-      <nav class="app-footer__nav" aria-label="Footer navigation">
-        <a href="#why">Why</a>
-        <a href="#support">Support</a>
-        <RouterLink to="/legal">Legal</RouterLink>
-        <RouterLink to="/privacy">Privacy</RouterLink>
-      </nav>
-    </div>
-  </footer>
+<footer class="editorial-footer">
+<div class="footer-top"><RouterLink to="/" class="editorial-wordmark">AGASSU</RouterLink><nav aria-label="Footer navigation"><RouterLink to="/#locations">World</RouterLink><RouterLink to="/#experience">Experience</RouterLink><RouterLink to="/#development">Development</RouterLink></nav><span class="studio-wordmark">ETERIUM</span></div>
+<div class="footer-taglines"><span>A game by Eterium</span><span>Some places shouldn't exist.</span></div>
+<div class="footer-bottom"><small>© 2026 Eterium. All rights reserved.</small><nav aria-label="Legal and support"><RouterLink to="/privacy">Privacy</RouterLink><RouterLink to="/legal">Legal</RouterLink><RouterLink to="/support">Support</RouterLink></nav></div>
+</footer>
 </template>
-
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import {RouterLink} from 'vue-router'
 </script>

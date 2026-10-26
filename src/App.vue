@@ -1,26 +1,5 @@
 <template>
   <div>
-    <div v-if="portalJumpActive" class="portal-jump-overlay" aria-hidden="true">
-      <div class="portal-jump-bg"></div>
-      <div class="portal-jump-vortex"></div>
-      <div class="portal-jump-lensing"></div>
-      <div class="portal-jump-ring ring-a"></div>
-      <div class="portal-jump-ring ring-b"></div>
-      <div class="portal-jump-ring ring-c"></div>
-      <div class="portal-jump-core"></div>
-      <div class="portal-jump-dust dust-a"></div>
-      <div class="portal-jump-dust dust-b"></div>
-      <div class="portal-jump-streaks"></div>
-      <div class="portal-jump-flash"></div>
-    </div>
-
-    <canvas
-      v-if="showNebulaCanvas"
-      ref="bgCanvas"
-      class="fixed inset-0 z-0 w-full h-full pointer-events-none"
-    ></canvas>
-
-
     <div class="relative z-10 min-h100">
 
       <AppHeader
@@ -38,8 +17,8 @@
 
       <Transition name="modal-fade" appear>
         <div v-if="authOpen" class="fixed inset-0 z-30 grid place-items-center bg-black/60" @click.self="closeAuth">
-          <div class="card w-[92vw] max-w-md p-6 md:p-8 relative auth-card">
-            <button class="absolute right-3 top-3 text-white/60 hover:text-white" @click="closeAuth">✕</button>
+          <div ref="authDialog" role="dialog" aria-modal="true" :aria-label="mode === 'signin' ? 'Sign in' : 'Create account'" class="card w-[92vw] max-w-md p-6 md:p-8 relative auth-card">
+            <button aria-label="Close sign in dialog" class="absolute right-3 top-3 text-white/60 hover:text-white" @click="closeAuth">✕</button>
             <div class="flex items-center gap-3 mb-6">
               <button
                 :class="['glass-btn comet', { 'comet-active': mode==='signin' }, ...tabClass('signin')]"
@@ -59,8 +38,10 @@
             <Transition name="tab-swap" mode="out-in">
               <form :key="mode" @submit.prevent="onSubmit" class="space-y-4">
                 <div v-if="mode==='signup'">
-                  <label class="block text-sm mb-1">Username</label>
+                  <label for="auth-username" class="block text-sm mb-1">Username</label>
                   <input
+                    id="auth-username"
+                    autocomplete="username"
                     v-model.trim="form.username"
                     type="text"
                     class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-eter-accent"
@@ -71,8 +52,10 @@
                 </div>
 
                 <div>
-                  <label class="block text-sm mb-1">Email</label>
+                  <label for="auth-email" class="block text-sm mb-1">Email</label>
                   <input
+                    id="auth-email"
+                    autocomplete="email"
                     v-model.trim="form.email"
                     type="email"
                     class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-eter-accent"
@@ -82,8 +65,10 @@
                   <p v-if="errors.email" class="text-red-400 text-xs mt-1">{{ errors.email }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm mb-1">Password</label>
+                  <label for="auth-password" class="block text-sm mb-1">Password</label>
                   <input
+                    id="auth-password"
+                    :autocomplete="mode === 'signin' ? 'current-password' : 'new-password'"
                     v-model.trim="form.password"
                     :type="showPass ? 'text' : 'password'"
                     class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-eter-accent"
@@ -94,8 +79,10 @@
                 </div>
 
                 <div v-if="mode==='signup'">
-                  <label class="block text-sm mb-1">Confirm password</label>
+                  <label for="auth-confirm" class="block text-sm mb-1">Confirm password</label>
                   <input
+                    id="auth-confirm"
+                    autocomplete="new-password"
                     v-model.trim="form.confirm"
                     :type="showPass ? 'text' : 'password'"
                     class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-eter-accent"
@@ -189,38 +176,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, computed, watch } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppHeader from './components/site/AppHeader.vue'
 import { useAuth } from './composables/useAuth'
 import UiPopup from './components/UiPopup.vue'
 import UiSpinner from './components/UiSpinner.vue'
-import type { NebulaHandle } from './lib/nebula'
 import { getIpCountry } from './lib/geoCountry'
-import { portalJumpActive } from './lib/portalTransition'
 import './assets/styles/home.css'
 
 const router = useRouter()
 const route = useRoute()
-const nebulaAllowed = ref(false)
-const showNebulaCanvas = computed(() => false)
-function clamp01(v: number) { return Math.max(0, Math.min(1, v)) }
-
-function setOrbitFromScroll() {
-  const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
-  const p = clamp01(window.scrollY / max)
-  nebula?.setOrbitProgress(p)
-}
-
-function onScroll() {
-  setOrbitFromScroll()
-}
-
-const bgCanvas = ref<HTMLCanvasElement | null>(null)
-let nebula: NebulaHandle | null = null
-let nebulaLoadCancelled = false
 let authStateSub: { unsubscribe: () => void } | null = null
-let nebulaScrollBound = false
 const cookieConsentKey = 'eterium_cookie_consent'
 const cookieConsent = ref<'accepted' | 'declined' | null>(null)
 const showCookieBanner = computed(() => cookieConsent.value === null)
@@ -230,61 +197,15 @@ async function getSupabase() {
   return mod.supabase
 }
 
-function runWhenIdle(cb: () => void) {
-  const ric = (window as Window & {
-    requestIdleCallback?: (callback: () => void) => number
-  }).requestIdleCallback
-  if (ric) {
-    ric(cb)
-    return
-  }
-  window.setTimeout(cb, 120)
-}
-
-function runAfterStartup(cb: () => void) {
-  window.setTimeout(() => runWhenIdle(cb), 7000)
-}
-
-async function initNebulaLazy() {
-  if (!bgCanvas.value || nebulaLoadCancelled || nebula) return
-  const { initNebula } = await import('./lib/nebula')
-  if (!bgCanvas.value || nebulaLoadCancelled || nebula) return
-  nebula = initNebula(bgCanvas.value)
-  nebula?.setMouseEnabled(false)
-  setOrbitFromScroll()
-}
-
-function disposeNebula() {
-  nebulaLoadCancelled = true
-  nebula?.dispose()
-  nebula = null
-}
-
-function bindNebulaScroll() {
-  if (nebulaScrollBound) return
-  window.addEventListener('scroll', onScroll, { passive: true })
-  nebulaScrollBound = true
-}
-
-function unbindNebulaScroll() {
-  if (!nebulaScrollBound) return
-  window.removeEventListener('scroll', onScroll)
-  nebulaScrollBound = false
-}
-
-function evaluateNebulaCapability() {
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const coarsePointer = window.matchMedia('(pointer: coarse)').matches
-  const saveData = 'connection' in navigator && !!(navigator as Navigator & {
-    connection?: { saveData?: boolean }
-  }).connection?.saveData
-  const lowCpu = typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4
-
-  nebulaAllowed.value = !reducedMotion && !coarsePointer && !saveData && !lowCpu && window.innerWidth >= 1024
-}
-
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') closeAuth()
+  if (e.key !== 'Tab') return
+  const elements = authDialog.value?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), a[href]')
+  if (!elements?.length) return
+  const first = elements[0]
+  const last = elements[elements.length - 1]
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
 }
 async function bindAuthEvents() {
   const supabase = await getSupabase()
@@ -295,35 +216,22 @@ async function bindAuthEvents() {
   authStateSub = sub?.subscription ?? null
 }
 onMounted(() => {
-  evaluateNebulaCapability()
   loadCookieConsent()
-  void resolveGoogleAuthAvailability()
   if (route.path === '/reset') void bindAuthEvents()
 })
 
-watch(showNebulaCanvas, (enabled) => {
-  if (enabled) {
-    nebulaLoadCancelled = false
-    bindNebulaScroll()
-    runAfterStartup(() => { void initNebulaLazy() })
-    return
-  }
-
-  unbindNebulaScroll()
-  disposeNebula()
-}, { immediate: true, flush: 'post' })
 
 onBeforeUnmount(() => {
-  unbindNebulaScroll()
   authStateSub?.unsubscribe()
   window.removeEventListener('keydown', onKey)
-  disposeNebula()
 })
 
 type Mode = 'signin' | 'signup'
 const { isAuthed, signIn, signUp, signOut } = useAuth()
 
 const authOpen = ref(false)
+const authDialog = ref<HTMLElement | null>(null)
+let authTrigger: HTMLElement | null = null
 const mode = ref<Mode>('signin')
 const showPass = ref(false)
 const form = reactive({ email: '', password: '', confirm: '', username: '' })
@@ -401,12 +309,16 @@ function setCookieConsent(nextConsent: 'accepted' | 'declined') {
   }
 }
 
-watch(authOpen, (open) => {
+watch(authOpen, async (open) => {
   if (open) {
+    authTrigger = document.activeElement as HTMLElement | null
     window.addEventListener('keydown', onKey)
+    await nextTick()
+    authDialog.value?.querySelector<HTMLInputElement>('input')?.focus()
     return
   }
   window.removeEventListener('keydown', onKey)
+  authTrigger?.focus()
 })
 
 function tabClass(k: Mode) {
@@ -418,6 +330,7 @@ function tabClass(k: Mode) {
   ]
 }
 function openAuth(nextMode: Mode) {
+  if (!countryResolved.value) void resolveGoogleAuthAvailability()
   mode.value = nextMode
   authOpen.value = true
   submitError.value = ''
@@ -549,274 +462,6 @@ async function logout() {
 }
 </script>
 
-<style scoped>
-.portal-jump-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  pointer-events: none;
-  overflow: hidden;
-  isolation: isolate;
-  background:
-    radial-gradient(ellipse at 50% 52%, rgba(32, 18, 58, 0.16), rgba(4, 5, 10, 0.86) 64%, rgba(0, 0, 0, 0.98) 100%),
-    rgba(0, 0, 0, 0.72);
-  animation: portalOverlayFade 140ms cubic-bezier(.16,.78,.28,1) both;
-}
 
-.portal-jump-bg {
-  position: absolute;
-  inset: -18%;
-  z-index: 0;
-  background:
-    radial-gradient(ellipse at 50% 52%, rgba(244, 192, 255, 0.22), rgba(171, 78, 255, 0.18) 15%, rgba(63, 139, 255, 0.09) 34%, rgba(0, 0, 0, 0) 58%),
-    radial-gradient(ellipse at 44% 56%, rgba(255, 76, 238, 0.18), rgba(0, 0, 0, 0) 42%),
-    radial-gradient(ellipse at 56% 48%, rgba(78, 173, 255, 0.12), rgba(0, 0, 0, 0) 46%);
-  animation: portalFieldZoom 140ms cubic-bezier(.16,.78,.28,1) both;
-}
-
-.portal-jump-vortex,
-.portal-jump-lensing,
-.portal-jump-core,
-.portal-jump-streaks,
-.portal-jump-flash,
-.portal-jump-dust,
-.portal-jump-ring {
-  position: absolute;
-  left: 50%;
-  top: 52%;
-  transform: translate(-50%, -50%);
-}
-
-.portal-jump-vortex {
-  z-index: 1;
-  width: 420px;
-  height: 520px;
-  border-radius: 50%;
-  background:
-    conic-gradient(
-      from 18deg,
-      rgba(0, 0, 0, 0) 0deg,
-      rgba(255, 80, 238, 0.2) 34deg,
-      rgba(90, 160, 255, 0.1) 76deg,
-      rgba(0, 0, 0, 0) 118deg,
-      rgba(244, 182, 255, 0.18) 178deg,
-      rgba(0, 0, 0, 0) 236deg,
-      rgba(85, 205, 255, 0.12) 302deg,
-      rgba(0, 0, 0, 0) 360deg
-    );
-  opacity: 0;
-  animation: portalVortex 140ms cubic-bezier(.16,.78,.28,1) both;
-}
-
-.portal-jump-lensing {
-  z-index: 2;
-  width: 340px;
-  height: 430px;
-  border-radius: 50%;
-  background:
-    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.94) 0 23%, rgba(45, 13, 62, 0.5) 24% 31%, rgba(236, 158, 255, 0.3) 32% 34%, rgba(78, 173, 255, 0.15) 36% 43%, rgba(0, 0, 0, 0) 58%);
-  box-shadow:
-    inset 0 0 48px rgba(0, 0, 0, 0.92),
-    0 0 36px rgba(233, 117, 255, 0.36),
-    0 0 94px rgba(78, 173, 255, 0.18);
-  opacity: 0;
-  animation: portalLens 140ms cubic-bezier(.16,.78,.28,1) both;
-}
-
-.portal-jump-core {
-  z-index: 4;
-  width: 200px;
-  height: 260px;
-  border-radius: 50%;
-  background:
-    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.96) 0 3%, rgba(244, 192, 255, 0.76) 8%, rgba(188, 106, 255, 0.46) 24%, rgba(25, 7, 38, 0.94) 42%, rgba(0, 0, 0, 0) 66%);
-  box-shadow:
-    inset 0 0 36px rgba(0, 0, 0, 0.9),
-    0 0 46px rgba(206, 110, 255, 0.72),
-    0 0 132px rgba(106, 160, 255, 0.32);
-  opacity: 0;
-  animation: portalCoreDive 140ms cubic-bezier(.14,.82,.26,1) both;
-}
-
-.portal-jump-ring {
-  z-index: 5;
-  border-radius: 50%;
-  border: 1px solid rgba(232, 170, 255, 0.72);
-  box-shadow:
-    0 0 18px rgba(232, 170, 255, 0.34),
-    inset 0 0 18px rgba(100, 172, 255, 0.12);
-  opacity: 0;
-}
-
-.ring-a {
-  width: 300px;
-  height: 380px;
-  clip-path: polygon(12% 0, 85% 2%, 100% 18%, 96% 82%, 82% 100%, 16% 96%, 0 78%, 4% 16%);
-  animation: portalRingWarp 140ms cubic-bezier(.14,.82,.26,1) both;
-}
-
-.ring-b {
-  width: 390px;
-  height: 500px;
-  border-color: rgba(133, 186, 255, 0.46);
-  clip-path: polygon(16% 2%, 76% 0, 100% 24%, 92% 78%, 70% 100%, 18% 94%, 0 72%, 7% 18%);
-  animation: portalRingWarp 140ms cubic-bezier(.14,.82,.26,1) both;
-  animation-delay: 30ms;
-}
-
-.ring-c {
-  width: 220px;
-  height: 285px;
-  border-color: rgba(255, 226, 184, 0.52);
-  clip-path: polygon(20% 0, 84% 8%, 98% 35%, 90% 88%, 62% 100%, 8% 78%, 0 24%);
-  animation: portalInnerRing 140ms cubic-bezier(.14,.82,.26,1) both;
-  animation-delay: 15ms;
-}
-
-.portal-jump-streaks {
-  inset: -34%;
-  left: auto;
-  top: auto;
-  transform: none;
-  z-index: 3;
-  background: repeating-conic-gradient(
-    from 0deg at 50% 52%,
-    rgba(233, 176, 255, 0.23) 0deg 1.4deg,
-    rgba(129, 177, 255, 0.16) 1.4deg 2.2deg,
-    rgba(0, 0, 0, 0) 2.2deg 10deg
-  );
-  mask-image: radial-gradient(ellipse at 50% 52%, transparent 0 16%, rgba(0,0,0,.92) 25%, transparent 74%);
-  opacity: 0;
-  animation: portalStreaksDive 140ms cubic-bezier(.14,.82,.26,1) both;
-}
-
-.portal-jump-dust {
-  z-index: 6;
-  width: 720px;
-  height: 720px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 18% 35%, rgba(255,255,255,.75) 0 1px, transparent 1.4px),
-    radial-gradient(circle at 72% 28%, rgba(188, 210, 255,.7) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 52% 78%, rgba(255, 190, 248,.72) 0 1px, transparent 1.3px),
-    radial-gradient(circle at 38% 54%, rgba(255,255,255,.45) 0 1px, transparent 1.2px);
-  background-size: 62px 62px, 84px 84px, 74px 74px, 46px 46px;
-  opacity: 0;
-  animation: portalDustIn 140ms cubic-bezier(.16,.78,.28,1) both;
-}
-
-.dust-b {
-  width: 980px;
-  height: 980px;
-  background-size: 96px 96px, 128px 128px, 110px 110px, 72px 72px;
-  animation-name: portalDustFar;
-}
-
-.portal-jump-flash {
-  inset: 0;
-  left: auto;
-  top: auto;
-  transform: none;
-  z-index: 8;
-  background:
-    radial-gradient(ellipse at 50% 52%, rgba(255,255,255,0.98) 0 8%, rgba(236, 170, 255, 0.5) 12%, rgba(0,0,0,0) 34%),
-    rgba(255, 255, 255, 0);
-  opacity: 0;
-  animation: portalFlash 140ms cubic-bezier(.16,.78,.28,1) both;
-}
-
-@keyframes portalOverlayFade {
-  0% { opacity: 0; }
-  10% { opacity: 1; }
-  78% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-@keyframes portalFieldZoom {
-  0% { opacity: 0; transform: scale(0.82) rotate(0deg); }
-  14% { opacity: 1; }
-  68% { opacity: 1; transform: scale(1.45) rotate(4deg); }
-  100% { opacity: 0; transform: scale(2.45) rotate(12deg); }
-}
-
-@keyframes portalVortex {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.55) rotate(-18deg); }
-  16% { opacity: .74; }
-  58% { opacity: .9; transform: translate(-50%, -50%) scale(1.2) rotate(68deg); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(4.8) rotate(180deg); }
-}
-
-@keyframes portalLens {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.42) rotate(-4deg); }
-  14% { opacity: .9; }
-  52% { opacity: 1; transform: translate(-50%, -50%) scale(1.05) rotate(4deg); }
-  82% { opacity: .96; transform: translate(-50%, -50%) scale(3.2) rotate(16deg); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(7.2) rotate(24deg); }
-}
-
-@keyframes portalCoreDive {
-  0% { transform: translate(-50%, -50%) scale(.32); opacity: 0; }
-  12% { opacity: .92; }
-  44% { transform: translate(-50%, -50%) scale(.94); opacity: 1; }
-  78% { transform: translate(-50%, -50%) scale(4.6); opacity: .82; }
-  100% { transform: translate(-50%, -50%) scale(9.8); opacity: 0; }
-}
-
-@keyframes portalRingWarp {
-  0% { transform: translate(-50%, -50%) scale(.42) rotate(-8deg); opacity: 0; }
-  14% { opacity: .9; }
-  48% { transform: translate(-50%, -50%) scale(1.06) rotate(22deg); opacity: .96; }
-  82% { transform: translate(-50%, -50%) scale(3.5) rotate(82deg); opacity: .58; }
-  100% { transform: translate(-50%, -50%) scale(8.2) rotate(122deg); opacity: 0; }
-}
-
-@keyframes portalInnerRing {
-  0% { transform: translate(-50%, -50%) scale(.35) rotate(20deg); opacity: 0; }
-  16% { opacity: 1; }
-  55% { transform: translate(-50%, -50%) scale(1.1) rotate(-26deg); opacity: .85; }
-  100% { transform: translate(-50%, -50%) scale(7.4) rotate(-120deg); opacity: 0; }
-}
-
-@keyframes portalStreaksDive {
-  0% { transform: scale(.72) rotate(0deg); opacity: 0; }
-  16% { opacity: .6; }
-  58% { opacity: .92; transform: scale(1.25) rotate(18deg); }
-  100% { transform: scale(2.55) rotate(58deg); opacity: 0; }
-}
-
-@keyframes portalDustIn {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.36) rotate(0deg); }
-  18% { opacity: .8; }
-  76% { opacity: .74; transform: translate(-50%, -50%) scale(1.7) rotate(60deg); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(4.6) rotate(120deg); }
-}
-
-@keyframes portalDustFar {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.52) rotate(20deg); }
-  22% { opacity: .46; }
-  76% { opacity: .42; transform: translate(-50%, -50%) scale(1.35) rotate(-40deg); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(3.4) rotate(-90deg); }
-}
-
-@keyframes portalFlash {
-  0%, 58% { opacity: 0; }
-  72% { opacity: .42; }
-  84% { opacity: .92; }
-  100% { opacity: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .portal-jump-bg,
-  .portal-jump-vortex,
-  .portal-jump-lensing,
-  .portal-jump-core,
-  .portal-jump-ring,
-  .portal-jump-streaks,
-  .portal-jump-dust,
-  .portal-jump-flash {
-    animation: none !important;
-  }
-}
-</style>
 
 

@@ -1,0 +1,101 @@
+[
+  {
+    "source": "C:\\Users\\Nikita\\Desktop\\eterium-game\\3dGame\\public\\textures\\world\\BACKROOMS\\Tiles133D_2K-JPG_Color.jpg",
+    "sourceSha256": "8c65376f2dc1d5a677888a9c4195a61763ce493467f4067730a8521f692c07d7",
+    "output": "public\\media\\game\\materials\\backrooms-Color.webp",
+    "outputSha256": "7d88ffacca0d046e6e37eb1df56124537b87d60bde7c2793c7434ebe89df1edc",
+    "size": [
+      1024,
+      1024
+    ],
+    "bytes": 194590
+  },
+  {
+    "source": "C:\\Users\\Nikita\\Desktop\\eterium-game\\3dGame\\public\\textures\\world\\BACKROOMS\\Tiles133D_2K-JPG_NormalGL.jpg",
+    "sourceSha256": "d925fcdeb349f351c761299f94d70614b37d0d168100986b1d7131d7c5479580",
+    "output": "public\\media\\game\\materials\\backrooms-NormalGL.webp",
+    "outputSha256": "1594bbe501bd3cc216ddfd9a233e9db53056ad6b778ab69cb1bbe532aa70bf18",
+    "size": [
+      1024,
+      1024
+    ],
+    "bytes": 1028004
+  },
+  {
+    "source": "C:\\Users\\Nikita\\Desktop\\eterium-game\\3dGame\\public\\textures\\world\\BACKROOMS\\Tiles133D_2K-JPG_Roughness.jpg",
+    "sourceSha256": "e57d2dda652dad0c030b9c2148b96c080976f65bf1b640520f29a8d38ff0afbb",
+    "output": "public\\media\\game\\materials\\backrooms-Roughness.webp",
+    "outputSha256": "1753588a50af96fb5ee97c9b13f31d26d634e6459662f4276cc43af1c4783359",
+    "size": [
+      1024,
+      1024
+    ],
+    "bytes": 638636
+  },
+  {
+    "source": "C:\\Users\\Nikita\\Desktop\\eterium-game\\3dGame\\public\\textures\\Tiles140_4K-JPG_Color.jpg",
+    "sourceSha256": "54bf82dda21674836a43a3a4bafa67ccc1519e7fa1e4a8ab70ad120f2acff4b6",
+    "output": "public\\media\\game\\materials\\transit-Color.webp",
+    "outputSha256": "4667caf86937028f32cefa105763049f600b43d395d49cb3067aaff64679fdad",
+    "size": [
+      1024,
+      1024
+    ],
+    "bytes": 341858
+  },
+  {
+    "source": "C:\\Users\\Nikita\\Desktop\\eterium-game\\3dGame\\public\\textures\\Tiles140_4K-JPG_NormalGL.jpg",
+    "sourceSha256": "9ffa112fbc13138779c1d93e44ddc420ac258b05e21d5be8f0b131dff8a0466f",
+    "output": "public\\media\\game\\materials\\transit-NormalGL.webp",
+    "outputSha256": "62b2b6701e2e80ff8047d7e9f1fe867fb0ecc8877ca234563fd455ff3da5a49c",
+    "size": [
+      1024,
+      1024
+    ],
+    "bytes": 786820
+  },
+  {
+    "source": "C:\\Users\\Nikita\\Desktop\\eterium-game\\3dGame\\public\\textures\\Tiles140_4K-JPG_Roughness.jpg",
+    "sourceSha256": "4747ea3f1ec3028817cd8cca4eeac787e010d3274a3fadba3a5b08b0a198f776",
+    "output": "public\\media\\game\\materials\\transit-Roughness.webp",
+    "outputSha256": "ead5e0004b95be2658421abf51e3fdd90f02849e5ee3ab54ff0253de4de01a52",
+    "size": [
+      1024,
+      1024
+    ],
+    "bytes": 517166
+  },
+  {
+    "source": "C:\\Users\\Nikita\\Desktop\\eterium-game\\3dGame\\public\\textures\\baza\\pol_real\\Metal010_1K-JPG_Color.jpg",
+    "sourceSha256": "f1137f5b80564670faad3611658819325c001eceb65c52b2a3392c6e80f72998",
+    "output": "public\\media\\game\\materials\\metal-Color.webp",
+    "outputSha256": "38c19e96bca02bdf7c4755ad998b95b95532ecda3f459d8863f7caa4a4ed53eb",
+    "size": [
+      1024,
+      1024
+    ],
+    "bytes": 182788
+  },
+  {
+    "source": "C:\\Users\\Nikita\\Desktop\\eterium-game\\3dGame\\public\\textures\\baza\\pol_real\\Metal010_1K-JPG_NormalGL.jpg",
+    "sourceSha256": "634d074fe971056ce800e8c982cb29a9bec3f377d08b2c30f7e5efd837f751e6",
+    "output": "public\\media\\game\\materials\\metal-NormalGL.webp",
+    "outputSha256": "a158f475bc83c245efabe83ff643d1bb9962a5088ba1fba1e0485ee52e2fe7dc",
+    "size": [
+      1024,
+      1024
+    ],
+    "bytes": 937836
+  },
+  {
+    "source": "C:\\Users\\Nikita\\Desktop\\eterium-game\\3dGame\\public\\textures\\baza\\pol_real\\Metal010_1K-JPG_Roughness.jpg",
+    "sourceSha256": "d37fb03651cc792aaaa0bde4ae2d4820cd7eddac468f418fff62119e487b5063",
+    "output": "public\\media\\game\\materials\\metal-Roughness.webp",
+    "outputSha256": "98e9a92bfebb7c98aefec3d2295c7b570818eaaf36cad590e4e090b499564c88",
+    "size": [
+      1024,
+      1024
+    ],
+    "bytes": 456790
+  }
+]

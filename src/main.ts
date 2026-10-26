@@ -1,6 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import './styles.css'
+import './assets/styles/rift.css'
+import './assets/styles/game-showcase.css'
+import './assets/styles/reference.css'
+import './assets/styles/hero-title.css'
 import { router } from './router'
 
 // включаем "режим анимаций" только если JS реально загрузился
